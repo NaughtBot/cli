@@ -1,0 +1,15 @@
+#!/bin/bash
+# OOBSign CLI Post-Install Script
+
+set -e
+
+# Ensure executables have correct permissions
+chmod 755 /usr/local/bin/oobsign
+chmod 755 /usr/local/bin/age-plugin-oobsign
+chmod 755 /usr/local/lib/liboobsign-sk.dylib
+chmod 755 /usr/local/lib/liboobsign-pkcs11.dylib
+
+# Log installation
+logger "OOBSign CLI installed successfully"
+
+exit 0

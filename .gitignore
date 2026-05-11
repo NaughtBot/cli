@@ -1,8 +1,34 @@
-.DS_Store
-*.swp
-*.swo
-node_modules/
-dist/
-build/
+# Binaries
+/oobsign
+/oobsign-audit
+/age-plugin-oobsign
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.h
+
+# BBS+ FFI dependencies (downloaded at build time)
+deps/
+
+# Test binary
+*.test
+
+# Output of go coverage
+*.out
+coverage.out.tmp
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
 .idea/
 .vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
