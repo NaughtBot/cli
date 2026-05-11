@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 // signingError converts an error code and message into a descriptive error.
@@ -13,45 +13,46 @@ func signingError(errCode *int, errMsg, noun string) error {
 	if errCode == nil {
 		return nil
 	}
-	code := protocol.AckAgentCommonSigningErrorCode(*errCode)
+	code := payloads.SigningErrorCode(*errCode)
 	switch code {
-	case protocol.N1: // rejected
+	case payloads.SigningErrorCodeN1: // rejected
 		return fmt.Errorf("%s request rejected: %s", noun, errMsg)
-	case protocol.N2: // expired
+	case payloads.SigningErrorCodeN2: // timeout
 		return ErrExpired
-	case protocol.N3: // unsupported algorithm
-		return fmt.Errorf("unsupported algorithm: %s", errMsg)
-	case protocol.N4: // invalid requester
-		return fmt.Errorf("invalid requester: %s", errMsg)
-	case protocol.N5: // key not found
+	case payloads.SigningErrorCodeN3: // key not found
 		return fmt.Errorf("key not found: %s", errMsg)
-	case protocol.N6: // internal error
+	case payloads.SigningErrorCodeN4: // invalid payload
+		return fmt.Errorf("invalid payload: %s", errMsg)
+	case payloads.SigningErrorCodeN5: // attestation failed
+		return fmt.Errorf("attestation failed: %s", errMsg)
+	case payloads.SigningErrorCodeN6: // internal error
 		return fmt.Errorf("internal error: %s", errMsg)
 	default:
 		return fmt.Errorf("unknown error (code %d): %s", *errCode, errMsg)
 	}
 }
 
-// getErrorCode converts a generated error code pointer to *int.
-func getErrorCode(code *protocol.AckAgentCommonSigningErrorCode) *int {
-	if code == nil {
-		return nil
-	}
-	c := int(*code)
-	return &c
-}
-
-// getErrorMessage dereferences a string pointer, returning "" for nil.
-func getErrorMessage(msg *string) string {
-	if msg == nil {
-		return ""
-	}
-	return *msg
-}
-
-// SigningResponse wraps the generated protocol.SignatureResponse with helper methods.
+// SigningResponse is a flat helper view over the discriminated
+// MailboxSshSignResponsePayloadV1 / MailboxSshAuthResponsePayloadV1 /
+// MailboxPkcs11SignResponsePayloadV1 unions in `github.com/naughtbot/e2ee-payloads/go`.
+//
+// The generated union types wrap an unexported `union json.RawMessage` so they
+// cannot be JSON-unmarshalled in one shot from the approver-decrypted
+// plaintext — callers would otherwise have to peek at the wire bytes, pick a
+// branch, and re-unmarshal. This flat helper preserves the snake_case wire
+// field names (`signature`, `error_code`, `error_message`) exactly as the
+// generated success / failure branches emit them and turns the union routing
+// into a single struct + IsSuccess/Error methods.
+//
+// This is NOT a parallel schema definition — the JSON tags trace 1:1 to the
+// generated `MailboxSshSignResponseSuccessV1.Signature` /
+// `MailboxSshSignResponseFailureV1.{ErrorCode, ErrorMessage}` fields. The
+// helper goes away once a future e2ee-payloads release exposes top-level
+// `As<Branch>` methods that can decode directly from the raw response bytes.
 type SigningResponse struct {
-	protocol.SignatureResponse
+	Signature    *[]byte `json:"signature,omitempty"`
+	ErrorCode    *int    `json:"error_code,omitempty"`
+	ErrorMessage *string `json:"error_message,omitempty"`
 }
 
 // IsSuccess returns true if the response contains a signature
@@ -68,10 +69,15 @@ func (r *SigningResponse) GetSignature() []byte {
 }
 
 // GetErrorCode returns the error code as int, or nil if not present.
-func (r *SigningResponse) GetErrorCode() *int { return getErrorCode(r.ErrorCode) }
+func (r *SigningResponse) GetErrorCode() *int { return r.ErrorCode }
 
 // GetErrorMessage returns the error message, or empty string if not present.
-func (r *SigningResponse) GetErrorMessage() string { return getErrorMessage(r.ErrorMessage) }
+func (r *SigningResponse) GetErrorMessage() string {
+	if r.ErrorMessage == nil {
+		return ""
+	}
+	return *r.ErrorMessage
+}
 
 // Error returns an error for unsuccessful responses
 func (r *SigningResponse) Error() error {
@@ -84,9 +90,12 @@ func (r *SigningResponse) Error() error {
 	return ErrRejected
 }
 
-// GPGSignResponse wraps the generated protocol.GpgSignatureResponse with helper methods.
+// GPGSignResponse is a flat helper view over the discriminated
+// MailboxGpgSignResponsePayloadV1 union.
 type GPGSignResponse struct {
-	protocol.GpgSignatureResponse
+	ArmoredSignature *string `json:"armored_signature,omitempty"`
+	ErrorCode        *int    `json:"error_code,omitempty"`
+	ErrorMessage     *string `json:"error_message,omitempty"`
 }
 
 // IsSuccess returns true if the response contains an armored signature
@@ -103,10 +112,15 @@ func (r *GPGSignResponse) GetArmoredSignature() string {
 }
 
 // GetErrorCode returns the error code as int, or nil if not present.
-func (r *GPGSignResponse) GetErrorCode() *int { return getErrorCode(r.ErrorCode) }
+func (r *GPGSignResponse) GetErrorCode() *int { return r.ErrorCode }
 
 // GetErrorMessage returns the error message, or empty string if not present.
-func (r *GPGSignResponse) GetErrorMessage() string { return getErrorMessage(r.ErrorMessage) }
+func (r *GPGSignResponse) GetErrorMessage() string {
+	if r.ErrorMessage == nil {
+		return ""
+	}
+	return *r.ErrorMessage
+}
 
 // Error returns an error for unsuccessful responses
 func (r *GPGSignResponse) Error() error {
@@ -119,9 +133,13 @@ func (r *GPGSignResponse) Error() error {
 	return ErrRejected
 }
 
-// GPGDecryptResponse wraps the generated protocol.GpgDecryptResponse with helper methods.
+// GPGDecryptResponse is a flat helper view over the discriminated
+// MailboxGpgDecryptResponsePayloadV1 union.
 type GPGDecryptResponse struct {
-	protocol.GpgDecryptResponse
+	SessionKey   *[]byte `json:"session_key,omitempty"`
+	Algorithm    *int32  `json:"algorithm,omitempty"`
+	ErrorCode    *int    `json:"error_code,omitempty"`
+	ErrorMessage *string `json:"error_message,omitempty"`
 }
 
 // IsSuccess returns true if the response contains a session key
@@ -146,10 +164,15 @@ func (r *GPGDecryptResponse) GetAlgorithm() byte {
 }
 
 // GetErrorCode returns the error code as int, or nil if not present.
-func (r *GPGDecryptResponse) GetErrorCode() *int { return getErrorCode(r.ErrorCode) }
+func (r *GPGDecryptResponse) GetErrorCode() *int { return r.ErrorCode }
 
 // GetErrorMessage returns the error message, or empty string if not present.
-func (r *GPGDecryptResponse) GetErrorMessage() string { return getErrorMessage(r.ErrorMessage) }
+func (r *GPGDecryptResponse) GetErrorMessage() string {
+	if r.ErrorMessage == nil {
+		return ""
+	}
+	return *r.ErrorMessage
+}
 
 // Error returns an error for unsuccessful responses
 func (r *GPGDecryptResponse) Error() error {

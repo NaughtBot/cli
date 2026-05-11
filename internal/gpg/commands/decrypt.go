@@ -10,8 +10,8 @@ import (
 	"github.com/naughtbot/cli/internal/gpg/cli"
 	gpgcrypto "github.com/naughtbot/cli/internal/gpg/crypto"
 	"github.com/naughtbot/cli/internal/gpg/openpgp"
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 // Decrypt decrypts an OpenPGP-encrypted message.
@@ -147,7 +147,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	}
 
 	// Prepare PKESK data for iOS
-	pkeskData := &protocol.PkeskData{
+	pkeskData := &payloads.PkeskData{
 		Version:        int32(matchingPKESK.Version),
 		KeyId:          matchingPKESK.KeyID,
 		Algorithm:      int32(matchingPKESK.Algorithm),

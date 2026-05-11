@@ -1,160 +1,95 @@
-//go:build legacy_api
-
-// Package client provides HTTP communication with the backend services.
 package client
 
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"time"
-
-	blobapi "github.com/naughtbot/api/blob"
 )
 
-// BlobClient handles communication with the blob service using the generated OpenAPI client.
-type BlobClient struct {
-	api *blobapi.ClientWithResponses
+// WrappedKey mirrors the legacy blob.WrappedKey envelope row used by the
+// multidevice blob-sync layer.
+type WrappedKey struct {
+	EncryptionPublicKeyHex string `json:"encryption_public_key_hex"`
+	EphemeralPublicHex     string `json:"ephemeral_public_hex"`
+	WrappedKey             []byte `json:"wrapped_key"`
+	WrappedKeyNonce        []byte `json:"wrapped_key_nonce"`
 }
 
-// NewBlobClient creates a new blob service client using the generated OpenAPI client.
-func NewBlobClient(baseURL string) (*BlobClient, error) {
-	if _, err := url.ParseRequestURI(baseURL); err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	c := &BlobClient{}
-
-	// Common headers for all requests.
-	headerEditor := func(_ context.Context, req *http.Request) error {
-		req.Header.Set("User-Agent", userAgent())
-		return nil
-	}
-
-	apiClient, err := blobapi.NewClientWithResponses(baseURL,
-		blobapi.WithHTTPClient(httpClient),
-		blobapi.WithRequestEditorFn(blobapi.RequestEditorFn(headerEditor)),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create blob API client: %w", err)
-	}
-	c.api = apiClient
-
-	return c, nil
+// BlobResponse mirrors the per-version blob payload returned by the legacy
+// blob service.
+type BlobResponse struct {
+	BlobNonce     []byte       `json:"blob_nonce"`
+	EncryptedBlob []byte       `json:"encrypted_blob"`
+	UpdatedAt     time.Time    `json:"updated_at"`
+	Version       int32        `json:"version"`
+	WrappedKeys   []WrappedKey `json:"wrapped_keys"`
 }
-
-// WrappedKey is an alias for the generated blob.WrappedKey type.
-type WrappedKey = blobapi.WrappedKey
 
 // BlobResult contains the blob data and version (ETag) for optimistic locking.
 type BlobResult struct {
-	blobapi.BlobResponse
-	ETag string // e.g., "v1" - used for If-Match header on updates
+	BlobResponse
+	ETag string // used for If-Match header on updates
 }
 
 // ErrVersionConflict is returned when an update fails due to version mismatch.
 var ErrVersionConflict = fmt.Errorf("version conflict - please refetch and retry")
 
-// authEditor returns a request editor that sets the Authorization header.
-func authEditor(accessToken string) blobapi.RequestEditorFn {
-	return func(_ context.Context, req *http.Request) error {
-		req.Header.Set("Authorization", "Bearer "+accessToken)
-		return nil
-	}
+// BlobClient handles communication with the blob service.
+//
+// The network methods below return ErrNotImplemented until the rewire against
+// github.com/naughtbot/api/blob is complete; the constructor and the response
+// shapes are kept so dependent sync code keeps compiling.
+type BlobClient struct {
+	baseURL string
 }
 
-// extractETag extracts and unquotes the ETag header from an HTTP response.
-func extractETag(resp *http.Response) string {
-	etag := resp.Header.Get("ETag")
-	if len(etag) >= 2 && etag[0] == '"' && etag[len(etag)-1] == '"' {
-		etag = etag[1 : len(etag)-1]
+// NewBlobClient creates a new blob service client.
+func NewBlobClient(baseURL string) (*BlobClient, error) {
+	if _, err := url.ParseRequestURI(baseURL); err != nil {
+		return nil, fmt.Errorf("invalid base URL: %w", err)
 	}
-	return etag
+	return &BlobClient{baseURL: baseURL}, nil
 }
 
-// GetBlob fetches the encrypted blob for the authenticated user via the generated API client.
-// Returns the blob data and the current version (ETag) for subsequent updates.
+// GetBlob stubs the legacy GET /api/v1/blob endpoint.
 func (c *BlobClient) GetBlob(ctx context.Context, accessToken string) (*BlobResult, error) {
-	httpLog.Debug("GET blob")
-
-	resp, err := c.api.BlobGetWithResponse(ctx, authEditor(accessToken))
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("GET blob status=%d", resp.StatusCode())
-
-	switch resp.StatusCode() {
-	case http.StatusOK:
-		if resp.JSON200 == nil {
-			return nil, fmt.Errorf("unexpected nil response body")
-		}
-		return &BlobResult{
-			BlobResponse: *resp.JSON200,
-			ETag:         extractETag(resp.HTTPResponse),
-		}, nil
-	case http.StatusNotFound:
-		return nil, ErrNotFound
-	case http.StatusUnauthorized:
-		return nil, fmt.Errorf("authentication required: please run 'nb login' first")
-	default:
-		return nil, fmt.Errorf("unexpected status %d: %s", resp.StatusCode(), string(resp.Body))
-	}
+	_ = ctx
+	_ = accessToken
+	httpLog.Debug("blob.GetBlob: stub")
+	return nil, ErrNotImplemented
 }
 
-// GetBlobHistory lists previous versions of the blob via the generated API client.
-func (c *BlobClient) GetBlobHistory(ctx context.Context, accessToken string, limit int) (*blobapi.HistoryListResponse, error) {
-	httpLog.Debug("GET blob/history")
-
-	params := &blobapi.BlobHistoryListParams{}
-	if limit > 0 {
-		l := int32(limit)
-		params.Limit = &l
-	}
-
-	resp, err := c.api.BlobHistoryListWithResponse(ctx, params, authEditor(accessToken))
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("GET blob/history status=%d", resp.StatusCode())
-
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status %d: %s", resp.StatusCode(), string(resp.Body))
-	}
-
-	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("unexpected nil response body")
-	}
-
-	return resp.JSON200, nil
+// HistoryListResponse mirrors the legacy blob history index response.
+type HistoryListResponse struct {
+	Items []HistoryListItem `json:"items"`
 }
 
-// GetBlobHistoryVersion gets a specific version from history via the generated API client.
-func (c *BlobClient) GetBlobHistoryVersion(ctx context.Context, accessToken string, version int) (*blobapi.HistoryDetailResponse, error) {
-	httpLog.Debug("GET blob/history/%d", version)
+// HistoryListItem is a row in HistoryListResponse.
+type HistoryListItem struct {
+	Version   int32     `json:"version"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
-	resp, err := c.api.BlobHistoryVersionGetWithResponse(ctx, int32(version), authEditor(accessToken))
-	if err != nil {
-		return nil, err
-	}
+// HistoryDetailResponse mirrors the legacy blob history detail response.
+type HistoryDetailResponse struct {
+	BlobResponse
+}
 
-	httpLog.Debug("GET blob/history/%d status=%d", version, resp.StatusCode())
+// GetBlobHistory stubs the legacy blob history index endpoint.
+func (c *BlobClient) GetBlobHistory(ctx context.Context, accessToken string, limit int) (*HistoryListResponse, error) {
+	_ = ctx
+	_ = accessToken
+	_ = limit
+	httpLog.Debug("blob.GetBlobHistory: stub")
+	return nil, ErrNotImplemented
+}
 
-	switch resp.StatusCode() {
-	case http.StatusOK:
-		if resp.JSON200 == nil {
-			return nil, fmt.Errorf("unexpected nil response body")
-		}
-		return resp.JSON200, nil
-	case http.StatusNotFound:
-		return nil, ErrNotFound
-	default:
-		return nil, fmt.Errorf("unexpected status %d: %s", resp.StatusCode(), string(resp.Body))
-	}
+// GetBlobHistoryVersion stubs the legacy blob history detail endpoint.
+func (c *BlobClient) GetBlobHistoryVersion(ctx context.Context, accessToken string, version int) (*HistoryDetailResponse, error) {
+	_ = ctx
+	_ = accessToken
+	_ = version
+	httpLog.Debug("blob.GetBlobHistoryVersion: stub")
+	return nil, ErrNotImplemented
 }

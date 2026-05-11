@@ -1,24 +1,31 @@
-//go:build legacy_api
-
 // Package client provides HTTP communication with the backend service.
+//
+// The legacy `/api/v1/exchanges` + ackagent-api/auth surface that previous
+// versions of this CLI targeted has been deleted. The replacement design
+// against github.com/naughtbot/api/{auth,mailbox} pairing endpoints is
+// tracked as a follow-up to NaughtBot/cli#12. Until that lands the public
+// types and constructors here keep the dependent transport / sync / sk-provider
+// code compiling, but every network method returns ErrNotImplemented at
+// runtime.
 package client
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
-	authapi "github.com/naughtbot/api/auth"
 	"github.com/naughtbot/cli/internal/shared/log"
 	"github.com/naughtbot/cli/internal/shared/version"
-	exchangesapi "github.com/naughtbot/api/mailbox"
 )
 
 var httpLog = log.New("http")
+
+// ErrNotImplemented is returned by network methods on this package while the
+// rewire against NaughtBot/api auth/mailbox is in progress.
+var ErrNotImplemented = errors.New("client: not yet rewired to NaughtBot/api auth/mailbox surface")
 
 var (
 	ErrTimeout    = errors.New("timeout waiting for response")
@@ -35,316 +42,184 @@ func userAgent() string {
 }
 
 // Client handles communication with the backend service.
-// It uses generated OpenAPI clients for the exchanges and auth services.
+//
+// The network methods below all return ErrNotImplemented until the
+// NaughtBot/api auth + mailbox rewire is complete; the constructor and
+// shape are preserved so dependent packages keep compiling.
 type Client struct {
-	baseURL      string
-	deviceID     string
-	accessToken  string
-	httpClient   *http.Client
-	exchangesAPI *exchangesapi.ClientWithResponses
-	authAPI      *authapi.ClientWithResponses
+	baseURL     string
+	deviceID    string
+	accessToken string
+	httpClient  *http.Client
 }
 
-// NewClient creates a new backend client with generated relay and auth API clients.
+// NewClient creates a new backend client.
 func NewClient(baseURL, deviceID string) (*Client, error) {
+	if baseURL == "" {
+		return nil, fmt.Errorf("baseURL is required")
+	}
 	if _, err := url.ParseRequestURI(baseURL); err != nil {
 		return nil, fmt.Errorf("invalid base URL: %w", err)
 	}
-
-	// Client-side hard ceiling must exceed the relay's long-poll cap
-	// (maxLongPollSeconds=25 on the relay, longPollTimeoutSeconds=30 on the
-	// CLI long-poll loop) plus network margin, otherwise exchange GETs race
-	// against http.Client.Timeout and surface as
-	// "Client.Timeout exceeded while awaiting headers" at exactly the
-	// moment the relay is writing the responded body. Per-request deadlines
-	// are still enforced via context by each caller (transport layer
-	// bounds the overall long-poll via ctx.WithTimeout).
-	httpClient := &http.Client{
-		Timeout: 60 * time.Second,
-	}
-
-	c := &Client{
+	return &Client{
 		baseURL:    baseURL,
 		deviceID:   deviceID,
-		httpClient: httpClient,
-	}
-
-	// Common request editor that adds standard headers.
-	// The closure captures c to read the current accessToken at call time.
-	headerEditor := func(ctx context.Context, req *http.Request) error {
-		req.Header.Set("User-Agent", userAgent())
-		req.Header.Set("X-Device-ID", c.deviceID)
-		if c.accessToken != "" {
-			req.Header.Set("Authorization", "Bearer "+c.accessToken)
-		}
-		return nil
-	}
-
-	exchangesClient, err := exchangesapi.NewClientWithResponses(baseURL,
-		exchangesapi.WithHTTPClient(httpClient),
-		exchangesapi.WithRequestEditorFn(exchangesapi.RequestEditorFn(headerEditor)),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create exchanges API client: %w", err)
-	}
-	c.exchangesAPI = exchangesClient
-
-	authClient, err := authapi.NewClientWithResponses(baseURL,
-		authapi.WithHTTPClient(httpClient),
-		authapi.WithRequestEditorFn(authapi.RequestEditorFn(headerEditor)),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create auth API client: %w", err)
-	}
-	c.authAPI = authClient
-
-	return c, nil
+		httpClient: &http.Client{Timeout: 60 * time.Second},
+	}, nil
 }
 
 // SetAccessToken sets the OIDC access token for authenticated requests.
-func (c *Client) SetAccessToken(token string) {
-	c.accessToken = token
+func (c *Client) SetAccessToken(token string) { c.accessToken = token }
+
+// ApprovalProofIssuerKey carries the public-key entry for a single issuer used
+// by the approval-proof verifier. The wire shape mirrors the legacy
+// /approval-proofs/config response.
+//
+// TODO(WS3.x): there is no matching schema in the current
+// `github.com/naughtbot/api/auth` generated client (the
+// `/approval-proofs/config` endpoint has not yet been added upstream). When
+// that endpoint is published, alias this type to the generated equivalent
+// per the AGENTS.md rule against hand-written schema mirrors and delete this
+// local copy. Until then, this is the contract dependent transport / approval
+// code expects, so changes must mirror the OpenAPI schema once it lands.
+type ApprovalProofIssuerKey struct {
+	KeyId            string `json:"key_id"`
+	PublicKeyHex     string `json:"public_key_hex"`
+	NotBeforeUnixSec int64  `json:"not_before_unix_sec"`
+	NotAfterUnixSec  int64  `json:"not_after_unix_sec"`
 }
 
-// ExchangesAPI returns the underlying /api/v1/exchanges OpenAPI client.
-// Used by the transport layer for the exchanges-based request flow.
-func (c *Client) ExchangesAPI() *exchangesapi.ClientWithResponses {
-	return c.exchangesAPI
+// ApprovalProofConfigResponse carries the approval-proof verifier configuration
+// used by the transport request builder.
+//
+// TODO(WS3.x): same note as ApprovalProofIssuerKey — replace with the
+// generated type from `github.com/naughtbot/api/auth` once the upstream
+// `/approval-proofs/config` schema lands.
+type ApprovalProofConfigResponse struct {
+	ActiveKeyId                string                   `json:"active_key_id"`
+	AllowedAppIdHashesHex      *[]string                `json:"allowed_app_id_hashes_hex,omitempty"`
+	AttestationLifetimeSeconds int32                    `json:"attestation_lifetime_seconds"`
+	AttestationVersion         string                   `json:"attestation_version"`
+	CircuitIdHex               string                   `json:"circuit_id_hex"`
+	IssuerKeys                 []ApprovalProofIssuerKey `json:"issuer_keys"`
+	PolicyVersion              int32                    `json:"policy_version"`
+	ProofVersion               string                   `json:"proof_version"`
 }
 
-// Login Session Endpoints (Multi-Device)
-
-// ApprovalProofConfigResponse is an alias for the generated approval-proof
-// verifier config response.
-type ApprovalProofConfigResponse = authapi.ApprovalProofConfigResponse
-
-// ListUserDevices gets the list of approver devices for a user via the generated auth API client.
-// Returns the generated ApproverInfo slice directly — callers dereference pointer fields inline.
-func (c *Client) ListUserDevices(ctx context.Context, userID, accessToken string) ([]authapi.ApproverInfo, error) {
-	httpLog.Debug("GET users/%s/approvers", userID)
-
-	// Use per-request editor to override the access token for this call.
-	authEditor := authapi.RequestEditorFn(func(_ context.Context, req *http.Request) error {
-		req.Header.Set("Authorization", "Bearer "+accessToken)
-		return nil
-	})
-
-	resp, err := c.authAPI.UserApproversListWithResponse(ctx, userID, authEditor)
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("GET users/%s/approvers status=%d", userID, resp.StatusCode())
-
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to list devices: %d - %s", resp.StatusCode(), string(resp.Body))
-	}
-
-	if resp.JSON200 == nil || resp.JSON200.Approvers == nil {
-		return nil, nil
-	}
-
-	return *resp.JSON200.Approvers, nil
+// AttestationData mirrors the per-approver attestation snapshot returned by the
+// legacy /approvers/{id}/attestation endpoint. The CLI sync layer uses this to
+// decide whether an approver device's keys may be added to the routing set.
+type AttestationData struct {
+	AttestationPublicKeyHex *string   `json:"attestation_public_key_hex,omitempty"`
+	AttestationType         string    `json:"attestation_type"`
+	CertificateChain        *[][]byte `json:"certificate_chain,omitempty"`
+	DeviceName              *string   `json:"device_name,omitempty"`
+	DeviceType              string    `json:"device_type"`
+	Mode                    string    `json:"mode"`
+	ResponseAssertion       *[]byte   `json:"response_assertion,omitempty"`
+	Timestamp               int64     `json:"timestamp"`
 }
 
-// GetApproverKeys fetches the active approver devices that still expose stable
-// encryption keys. During the per-pairing-key rollout, the generated
-// /approver-keys endpoint only returns approver IDs, so NaughtBot falls back to
-// the device list until the pairing-key flow is wired through end to end.
-func (c *Client) GetApproverKeys(ctx context.Context, userID, accessToken string) ([]authapi.ApproverInfo, error) {
+// ApproverInfo describes one approver device for the active user, used by the
+// CLI multi-device routing and sync layers.
+type ApproverInfo struct {
+	ApproverId             *string          `json:"approver_id,omitempty"`
+	Attestation            *AttestationData `json:"attestation,omitempty"`
+	CreatedAt              *time.Time       `json:"created_at,omitempty"`
+	DeviceName             *string          `json:"device_name,omitempty"`
+	DeviceType             *string          `json:"device_type,omitempty"`
+	EncryptionPublicKeyHex *string          `json:"encryption_public_key_hex,omitempty"`
+	LastUsedAt             *time.Time       `json:"last_used_at,omitempty"`
+}
+
+// SessionTokensResponse is the OIDC token bundle returned to the CLI after a
+// successful requester-session claim.
+type SessionTokensResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	UserId       string `json:"user_id"`
+}
+
+// CreateRequesterSessionRequest is the body of POST /requester-sessions.
+type CreateRequesterSessionRequest struct {
+	ClientID    string  `json:"client_id"`
+	RelayURL    *string `json:"relay_url,omitempty"`
+	RedirectURI string  `json:"redirect_uri"`
+}
+
+// CreateRequesterSessionResponse is the body returned by POST /requester-sessions.
+type CreateRequesterSessionResponse struct {
+	SessionId        string `json:"session_id"`
+	TokenClaimSecret string `json:"token_claim_secret"`
+}
+
+// GetRequesterSessionStatusResponse mirrors the legacy session-status response.
+type GetRequesterSessionStatusResponse struct {
+	Status *string `json:"status,omitempty"`
+}
+
+// ListUserDevices stubs the legacy /users/{id}/approvers endpoint.
+func (c *Client) ListUserDevices(ctx context.Context, userID, accessToken string) ([]ApproverInfo, error) {
+	_ = ctx
+	_ = userID
+	_ = accessToken
+	httpLog.Debug("client.ListUserDevices: stub")
+	return nil, ErrNotImplemented
+}
+
+// GetApproverKeys mirrors the legacy fallback that returns the active approver
+// device list when /approver-keys is not yet available.
+func (c *Client) GetApproverKeys(ctx context.Context, userID, accessToken string) ([]ApproverInfo, error) {
 	return c.ListUserDevices(ctx, userID, accessToken)
 }
 
-// GetApprovalProofConfig fetches the public verifier configuration for
-// approval proofs.
+// GetApprovalProofConfig stubs the legacy /approval-proofs/config endpoint.
 func (c *Client) GetApprovalProofConfig(ctx context.Context) (*ApprovalProofConfigResponse, error) {
-	httpLog.Debug("GET approval-proofs/config")
-
-	resp, err := c.authAPI.ApprovalProofsGetConfigWithResponse(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("GET approval-proofs/config status=%d", resp.StatusCode())
-
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf(
-			"failed to fetch approval proof config: %d - %s",
-			resp.StatusCode(),
-			string(resp.Body),
-		)
-	}
-	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("missing approval proof config response body")
-	}
-
-	return resp.JSON200, nil
+	_ = ctx
+	httpLog.Debug("client.GetApprovalProofConfig: stub")
+	return nil, ErrNotImplemented
 }
 
-// Attestation Endpoints
-
-// AttestationData is an alias for the generated auth.AttestationData type.
-type AttestationData = authapi.AttestationData
-
-// GetAttestation retrieves attestation data for a device via the generated auth API client.
-// The approverId parameter is the UUID of the approver device.
+// GetAttestation stubs the legacy /approvers/{id}/attestation endpoint.
 func (c *Client) GetAttestation(ctx context.Context, approverId, accessToken string) (*AttestationData, error) {
-	httpLog.Debug("GET approvers/%s/attestation", approverId)
-
-	// Use per-request editor to set the access token for this call.
-	authEditor := authapi.RequestEditorFn(func(_ context.Context, req *http.Request) error {
-		req.Header.Set("Authorization", "Bearer "+accessToken)
-		return nil
-	})
-
-	resp, err := c.authAPI.ApproverAttestationGetWithResponse(ctx, approverId, authEditor)
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("GET approvers/%s/attestation status=%d", approverId, resp.StatusCode())
-
-	switch resp.StatusCode() {
-	case http.StatusOK:
-		if resp.JSON200 == nil {
-			return nil, fmt.Errorf("unexpected nil response body")
-		}
-		if resp.JSON200.Attestation == nil {
-			return nil, fmt.Errorf("no attestation data for device")
-		}
-		return resp.JSON200.Attestation, nil
-	case http.StatusNotFound:
-		return nil, ErrNotFound
-	case http.StatusForbidden:
-		return nil, fmt.Errorf("device belongs to different user")
-	case http.StatusUnauthorized:
-		return nil, fmt.Errorf("authentication required")
-	default:
-		return nil, fmt.Errorf("unexpected status %d: %s", resp.StatusCode(), string(resp.Body))
-	}
+	_ = ctx
+	_ = approverId
+	_ = accessToken
+	httpLog.Debug("client.GetAttestation: stub")
+	return nil, ErrNotImplemented
 }
 
-// SessionTokensResponse is the generated auth.GetRequesterSessionTokensResponse type.
-// Use generated type directly to prevent spec drift.
-type SessionTokensResponse = authapi.GetRequesterSessionTokensResponse
-
-// GetSessionTokens gets OIDC tokens for a verified requester session (no auth required).
-// The tokenClaimSecret must be provided for session fixation prevention.
+// GetSessionTokens stubs the legacy /requester-sessions/{id}/tokens endpoint.
 func (c *Client) GetSessionTokens(ctx context.Context, sessionID, tokenClaimSecret string) (*SessionTokensResponse, error) {
-	httpLog.Debug("GET requester-sessions/%s/tokens", sessionID)
-
-	// The secret query parameter is not in the OpenAPI spec, so we add it via a request editor.
-	secretEditor := authapi.RequestEditorFn(func(_ context.Context, req *http.Request) error {
-		q := req.URL.Query()
-		q.Set("secret", tokenClaimSecret)
-		req.URL.RawQuery = q.Encode()
-		return nil
-	})
-
-	resp, err := c.authAPI.RequesterSessionTokensGetWithResponse(ctx, sessionID, secretEditor)
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("GET requester-sessions/%s/tokens status=%d", sessionID, resp.StatusCode())
-
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("get session tokens failed: %d - %s", resp.StatusCode(), string(resp.Body))
-	}
-
-	if resp.JSON200 == nil {
-		return nil, fmt.Errorf("unexpected nil response body")
-	}
-
-	return resp.JSON200, nil
+	_ = ctx
+	_ = sessionID
+	_ = tokenClaimSecret
+	httpLog.Debug("client.GetSessionTokens: stub")
+	return nil, ErrNotImplemented
 }
 
-// Requester Session Endpoints (CLI login flow)
-
-// CreateRequesterSessionRequest is the generated auth.CreateRequesterSessionRequest type.
-type CreateRequesterSessionRequest = authapi.CreateRequesterSessionRequest
-
-// CreateRequesterSessionResponse is the generated auth.CreateRequesterSessionResponse type.
-type CreateRequesterSessionResponse = authapi.CreateRequesterSessionResponse
-
-// CreateRequesterSession creates a requester session (no auth required) via the generated auth API client.
-// The session starts unclaimed and will be claimed by iOS after scanning the QR code.
+// CreateRequesterSession stubs the legacy POST /requester-sessions endpoint.
 func (c *Client) CreateRequesterSession(ctx context.Context, req *CreateRequesterSessionRequest) (*CreateRequesterSessionResponse, error) {
-	httpLog.Debug("POST requester-sessions")
-
-	resp, err := c.authAPI.RequesterSessionsCreateWithResponse(ctx, *req)
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("POST requester-sessions status=%d", resp.StatusCode())
-
-	if resp.StatusCode() != http.StatusCreated && resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("create requester session failed: %d - %s", resp.StatusCode(), string(resp.Body))
-	}
-
-	if resp.JSON201 == nil {
-		// Fall back to parsing the body directly for 200 responses.
-		var result CreateRequesterSessionResponse
-		if err := json.Unmarshal(resp.Body, &result); err != nil {
-			return nil, err
-		}
-		return &result, nil
-	}
-
-	return resp.JSON201, nil
+	_ = ctx
+	_ = req
+	httpLog.Debug("client.CreateRequesterSession: stub")
+	return nil, ErrNotImplemented
 }
 
-// GetRequesterSessionStatus gets the status of a requester session via the generated auth API client.
-// Returns the generated type directly — callers dereference pointer fields inline.
-func (c *Client) GetRequesterSessionStatus(ctx context.Context, sessionID string) (*authapi.GetRequesterSessionStatusResponse, error) {
-	httpLog.Debug("GET requester-sessions/%s/status", sessionID)
-
-	resp, err := c.authAPI.RequesterSessionStatusGetWithResponse(ctx, sessionID)
-	if err != nil {
-		return nil, err
-	}
-
-	httpLog.Debug("GET requester-sessions/%s/status status=%d", sessionID, resp.StatusCode())
-
-	switch resp.StatusCode() {
-	case http.StatusOK:
-		if resp.JSON200 == nil {
-			return nil, fmt.Errorf("unexpected nil response body")
-		}
-		return resp.JSON200, nil
-	case http.StatusNotFound:
-		return nil, ErrNotFound
-	case http.StatusGone:
-		return nil, ErrExpired
-	default:
-		return nil, fmt.Errorf("unexpected status: %d", resp.StatusCode())
-	}
+// GetRequesterSessionStatus stubs the legacy GET /requester-sessions/{id}/status endpoint.
+func (c *Client) GetRequesterSessionStatus(ctx context.Context, sessionID string) (*GetRequesterSessionStatusResponse, error) {
+	_ = ctx
+	_ = sessionID
+	httpLog.Debug("client.GetRequesterSessionStatus: stub")
+	return nil, ErrNotImplemented
 }
 
-// PollRequesterSession polls until the requester session is verified or timeout.
-func (c *Client) PollRequesterSession(ctx context.Context, sessionID string, timeout time.Duration, cfg PollConfig) (*authapi.GetRequesterSessionStatusResponse, error) {
-	return poll(ctx, timeout, cfg,
-		func(ctx context.Context) (*authapi.GetRequesterSessionStatusResponse, error) {
-			return c.GetRequesterSessionStatus(ctx, sessionID)
-		},
-		func(status *authapi.GetRequesterSessionStatusResponse) (bool, error) {
-			s := ""
-			if status.Status != nil {
-				s = string(*status.Status)
-			}
-			switch s {
-			case "verified":
-				return true, nil
-			case "rejected":
-				return true, ErrRejected
-			case "expired":
-				return true, ErrExpired
-			case "pending", "claimed":
-				return false, nil
-			default:
-				return true, fmt.Errorf("unknown status: %s", s)
-			}
-		},
-	)
+// PollRequesterSession stubs the long-poll loop over GetRequesterSessionStatus.
+func (c *Client) PollRequesterSession(ctx context.Context, sessionID string, timeout time.Duration, cfg PollConfig) (*GetRequesterSessionStatusResponse, error) {
+	_ = ctx
+	_ = sessionID
+	_ = timeout
+	_ = cfg
+	httpLog.Debug("client.PollRequesterSession: stub")
+	return nil, ErrNotImplemented
 }

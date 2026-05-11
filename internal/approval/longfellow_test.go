@@ -269,7 +269,7 @@ func TestCanonicalApprovalChallengeJSON_MatchesLegacyEncoding(t *testing.T) {
 		t.Fatalf("canonicalApprovalChallengeJSON: %v", err)
 	}
 
-	want := `{"nonce":"nonce-123","plaintextHash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","requestId":"550e8400-e29b-41d4-a716-446655440000","version":"approval-challenge/v1"}`
+	want := `{"nonce":"nonce-123","plaintext_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","request_id":"550e8400-e29b-41d4-a716-446655440000","version":"approval-challenge/v1"}`
 	if got != want {
 		t.Errorf("canonical approval challenge JSON changed\n  got:  %s\n  want: %s", got, want)
 	}

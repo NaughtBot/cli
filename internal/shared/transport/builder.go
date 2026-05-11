@@ -163,6 +163,22 @@ func (b *RequestBuilder) WithTimestamp(ts int64) *RequestBuilder {
 	return b
 }
 
+// WithSkipApprovalProofVerifier disables fetching the
+// `/approval-proofs/config` document and the BBS+/Longfellow proof
+// verifier load entirely for this Send. Enrollment flows MUST use this:
+// they intentionally consume the response via DecryptWithoutAttestation
+// (key-level attestation is bound into the approved-enroll payload), and
+// the approval-proofs config endpoint is itself stubbed during the
+// mailbox-DPoP rewire window, so leaving the fetch on would block every
+// enrollment.
+func (b *RequestBuilder) WithSkipApprovalProofVerifier() *RequestBuilder {
+	if b.err != nil {
+		return b
+	}
+	b.skipAttestationVerify = true
+	return b
+}
+
 // WithClientRequestID overrides the UUID used as clientRequestId / AAD
 // for this Send. Callers that embed the request ID inside the payload
 // body (e.g., SSH enroll) should generate a UUID, stamp it into the
@@ -369,20 +385,23 @@ func marshalPayloadWithApprovalChallenge(payload any, requestID uuid.UUID) ([]by
 		return nil, approval.ApprovalChallenge{}, fmt.Errorf("payload must be a JSON object: %w", err)
 	}
 
-	if challengeValue, ok := payloadObject["approvalChallenge"]; ok && challengeValue != nil {
+	// The e2ee-payloads schema names this field `approval_challenge`; the
+	// generated request payload structs serialize it with the snake_case
+	// JSON tag, so detection and injection both use the snake_case key.
+	if challengeValue, ok := payloadObject["approval_challenge"]; ok && challengeValue != nil {
 		challengeBytes, err := json.Marshal(challengeValue)
 		if err != nil {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal explicit approvalChallenge: %w", err)
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal explicit approval_challenge: %w", err)
 		}
 		var challenge approval.ApprovalChallenge
 		if err := json.Unmarshal(challengeBytes, &challenge); err != nil {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("decode explicit approvalChallenge: %w", err)
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("decode explicit approval_challenge: %w", err)
 		}
 		if challenge.Version != approval.ApprovalChallengeVersion {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approvalChallenge.version must be %q", approval.ApprovalChallengeVersion)
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approval_challenge.version must be %q", approval.ApprovalChallengeVersion)
 		}
 		if challenge.RequestID != requestID.String() {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approvalChallenge.requestId must match request ID")
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approval_challenge.request_id must match request ID")
 		}
 		return payloadBytes, challenge, nil
 	}
@@ -398,11 +417,11 @@ func marshalPayloadWithApprovalChallenge(payload any, requestID uuid.UUID) ([]by
 		RequestID:     requestID.String(),
 		PlaintextHash: "sha256:" + hex.EncodeToString(digest[:]),
 	}
-	payloadObject["approvalChallenge"] = challenge
+	payloadObject["approval_challenge"] = challenge
 
 	withChallenge, err := json.Marshal(payloadObject)
 	if err != nil {
-		return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal payload with approvalChallenge: %w", err)
+		return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal payload with approval_challenge: %w", err)
 	}
 	return withChallenge, challenge, nil
 }

@@ -129,7 +129,7 @@ All other PKCS#11 functions return `CKR_FUNCTION_NOT_SUPPORTED`.
 Enable debug logging by setting the environment variable:
 
 ```bash
-export OOBSIGN_LOG_LEVEL=debug
+export NB_LOG_LEVEL=debug
 pkcs11-tool --module ./libnb-pkcs11.dylib --list-slots
 ```
 

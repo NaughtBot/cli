@@ -9,8 +9,9 @@ import (
 	"os"
 	"testing"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/client"
 	sharedtestdata "github.com/naughtbot/cli/internal/shared/testdata"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 // ProtocolTestVectors matches the structure of data/protocol_test_vectors.json
@@ -164,7 +165,8 @@ func TestSSHSKMessageComponents(t *testing.T) {
 	}
 }
 
-// TestEnrollResponseParsing verifies sk_provider can parse iOS EnrollResponse JSON.
+// TestEnrollResponseParsing verifies sk_provider can parse iOS enrollment
+// response JSON against the e2ee-payloads approved-enroll branch.
 func TestEnrollResponseParsing(t *testing.T) {
 	vectors := loadProtocolVectors(t)
 
@@ -176,27 +178,26 @@ func TestEnrollResponseParsing(t *testing.T) {
 				t.Fatalf("failed to marshal example JSON: %v", err)
 			}
 
-			// Parse into protocol.EnrollResponse (the generated struct)
-			var resp protocol.EnrollResponse
+			// Parse into the e2ee-payloads approved-enroll branch.
+			var resp payloads.MailboxEnrollResponseApprovedV1
 			if err := json.Unmarshal(jsonData, &resp); err != nil {
-				t.Fatalf("failed to parse EnrollResponse: %v", err)
+				t.Fatalf("failed to parse approved enrollment response: %v", err)
 			}
 
-			// Verify required fields
-			if resp.Status != protocol.EnrollResponseStatusApproved {
-				t.Errorf("status: got %q, want %q", resp.Status, protocol.EnrollResponseStatusApproved)
+			// Verify required fields. PublicKeyHex must be 130 hex chars (65
+			// bytes uncompressed P-256) for the legacy test vectors.
+			if len(resp.PublicKeyHex) != 130 {
+				t.Errorf("publicKeyHex length: got %d, want 130 hex chars (65 bytes uncompressed P-256)", len(resp.PublicKeyHex))
 			}
-			if resp.PublicKeyHex == nil || len(*resp.PublicKeyHex) != 130 {
-				t.Errorf("publicKeyHex length: got %d, want 130 hex chars (65 bytes uncompressed P-256)", len(*resp.PublicKeyHex))
-			}
-			if resp.IosKeyId == nil || *resp.IosKeyId == "" {
-				t.Error("ios_key_id is empty")
+			if resp.DeviceKeyId == "" {
+				t.Error("device_key_id is empty")
 			}
 		})
 	}
 }
 
-// TestSignResponseParsing verifies sk_provider can parse iOS SSHSignResponse JSON.
+// TestSignResponseParsing verifies sk_provider can parse iOS SSH sign
+// response JSON against the flat client.SigningResponse helper.
 func TestSignResponseParsing(t *testing.T) {
 	vectors := loadProtocolVectors(t)
 
@@ -208,24 +209,18 @@ func TestSignResponseParsing(t *testing.T) {
 				t.Fatalf("failed to marshal example JSON: %v", err)
 			}
 
-			// Parse into protocol.SignatureResponse (the generated struct)
-			var resp protocol.SignatureResponse
+			// Parse into the flat SigningResponse helper that mirrors the
+			// MailboxSshAuthResponseSuccessV1 / Failure union.
+			var resp client.SigningResponse
 			if err := json.Unmarshal(jsonData, &resp); err != nil {
-				t.Fatalf("failed to parse SignatureResponse: %v", err)
+				t.Fatalf("failed to parse SigningResponse: %v", err)
 			}
 
-			// Verify required fields
-			if resp.RequestId == nil || *resp.RequestId == "" {
-				t.Error("request_id is empty")
+			if !resp.IsSuccess() {
+				t.Fatalf("expected success response, got error: %v", resp.Error())
 			}
-			if resp.Status == nil || *resp.Status != protocol.SignatureResponseStatusApproved {
-				t.Errorf("status: want %q", protocol.SignatureResponseStatusApproved)
-			}
-			if resp.Signature == nil || len(*resp.Signature) != 64 {
-				t.Errorf("signature length: want 64")
-			}
-			if resp.Counter == nil || *resp.Counter == 0 {
-				t.Error("counter is 0 (should be at least 1)")
+			if len(resp.GetSignature()) != 64 {
+				t.Errorf("signature length: want 64, got %d", len(resp.GetSignature()))
 			}
 		})
 	}
@@ -233,7 +228,7 @@ func TestSignResponseParsing(t *testing.T) {
 
 // TestEnrollResponseRoundtrip verifies encoding/decoding preserves all fields.
 func TestEnrollResponseRoundtrip(t *testing.T) {
-	iosKeyID := "test-key-id"
+	deviceKeyID := "test-key-id"
 	publicKeyBytes := make([]byte, 64)
 	signature := make([]byte, 64)
 
@@ -246,10 +241,10 @@ func TestEnrollResponseRoundtrip(t *testing.T) {
 	}
 
 	publicKeyHex := hex.EncodeToString(publicKeyBytes)
-	original := protocol.EnrollResponse{
-		Status:          protocol.EnrollResponseStatusApproved,
-		PublicKeyHex:    &publicKeyHex,
-		IosKeyId:        &iosKeyID,
+	original := payloads.MailboxEnrollResponseApprovedV1{
+		Status:          payloads.Approved,
+		PublicKeyHex:    publicKeyHex,
+		DeviceKeyId:     deviceKeyID,
 		SubkeySignature: &signature,
 	}
 
@@ -260,7 +255,7 @@ func TestEnrollResponseRoundtrip(t *testing.T) {
 	}
 
 	// Decode
-	var decoded protocol.EnrollResponse
+	var decoded payloads.MailboxEnrollResponseApprovedV1
 	if err := json.Unmarshal(jsonData, &decoded); err != nil {
 		t.Fatalf("failed to unmarshal: %v", err)
 	}
@@ -269,31 +264,26 @@ func TestEnrollResponseRoundtrip(t *testing.T) {
 	if decoded.Status != original.Status {
 		t.Errorf("Status mismatch: got %q, want %q", decoded.Status, original.Status)
 	}
-	if decoded.PublicKeyHex == nil || *decoded.PublicKeyHex != publicKeyHex {
+	if decoded.PublicKeyHex != publicKeyHex {
 		t.Error("PublicKeyHex mismatch")
 	}
-	if decoded.IosKeyId == nil || *decoded.IosKeyId != iosKeyID {
-		t.Errorf("IosKeyId mismatch")
+	if decoded.DeviceKeyId != deviceKeyID {
+		t.Errorf("DeviceKeyId mismatch")
+	}
+	if decoded.SubkeySignature == nil || !bytes.Equal(*decoded.SubkeySignature, signature) {
+		t.Error("SubkeySignature mismatch")
 	}
 }
 
 // TestSignResponseRoundtrip verifies encoding/decoding preserves all fields.
 func TestSignResponseRoundtrip(t *testing.T) {
-	requestID := "550e8400-e29b-41d4-a716-446655440000"
-	status := protocol.SignatureResponseStatusApproved
 	signature := make([]byte, 64)
-	var counter int32 = 42
-
-	// Fill with recognizable pattern
 	for i := range signature {
 		signature[i] = byte(i)
 	}
 
-	original := protocol.SignatureResponse{
-		RequestId: &requestID,
-		Status:    &status,
+	original := client.SigningResponse{
 		Signature: &signature,
-		Counter:   &counter,
 	}
 
 	// Encode
@@ -303,23 +293,16 @@ func TestSignResponseRoundtrip(t *testing.T) {
 	}
 
 	// Decode
-	var decoded protocol.SignatureResponse
+	var decoded client.SigningResponse
 	if err := json.Unmarshal(jsonData, &decoded); err != nil {
 		t.Fatalf("failed to unmarshal: %v", err)
 	}
 
-	// Verify all fields
-	if decoded.RequestId == nil || *decoded.RequestId != requestID {
-		t.Errorf("RequestID mismatch")
+	if !decoded.IsSuccess() {
+		t.Error("expected success after roundtrip")
 	}
-	if decoded.Status == nil || *decoded.Status != status {
-		t.Errorf("Status mismatch")
-	}
-	if decoded.Signature == nil || !bytes.Equal(*decoded.Signature, signature) {
+	if !bytes.Equal(decoded.GetSignature(), signature) {
 		t.Error("Signature mismatch")
-	}
-	if decoded.Counter == nil || *decoded.Counter != counter {
-		t.Errorf("Counter mismatch: got %d, want %d", *decoded.Counter, counter)
 	}
 }
 

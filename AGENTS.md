@@ -4,15 +4,15 @@
 
 This repository was bootstrapped by importing the legacy `oobsign-cli`
 source tree (see [NaughtBot/cli#1](https://github.com/NaughtBot/cli/issues/1)).
-The WS3.2 Go module rename and dependency rewire is complete; the
-WS3.3 rebrand sweep (in progress) is landing the user-visible
-`oobsign` -> `nb` / `AckAgent` -> `NaughtBot` substitutions. A
-follow-up PR will delete `internal/protocol/gen.go` and rewire the
-HTTP client against the regenerated NaughtBot/api packages — the
-relevant call sites are currently gated behind the `legacy_api`
-build tag with `*_stub.go` replacements that compile but error at
-runtime with `TODO(WS3.3)`. WS3.4–WS3.7 follow with test fixtures,
-integration suites, packaging, CI, and the proper AGENTS.md content.
+The WS3.2 Go module rename and dependency rewire and WS3.3 rebrand
+sweep are complete. WS3.3a deleted `internal/protocol/gen.go` and
+rewired consumers onto generated types from `github.com/naughtbot/api`
+and `github.com/naughtbot/e2ee-payloads/go`; the network call sites
+that previously targeted the legacy `/api/v1/exchanges` surface return
+`client.ErrNotImplemented` / `transport.ErrRelayNotImplemented` until
+the mailbox-DPoP rewire lands as a follow-up to NaughtBot/cli#12.
+WS3.4–WS3.7 follow with test fixtures, integration suites, packaging,
+CI, and the proper AGENTS.md content.
 
 See the detailed plan at
 [`workspace/plans/2026-05-11-0208Z-cli-extraction.md`](https://github.com/NaughtBot/workspace/blob/main/plans/2026-05-11-0208Z-cli-extraction.md).
@@ -50,8 +50,6 @@ WS3.4 will copy into `cli/testdata/`. Until then, the relevant
   signing logic.
 - `internal/approval/` — vendored approval-proof verifier (Longfellow
   glue + `attested-key-zk`).
-- `internal/protocol/` — current home of the legacy AckAgent
-  envelope types (`gen.go`); slated for deletion in the next PR.
 - `internal/shared/{client,transport,config,sync,multidevice,...}` —
   shared HTTP client, transport layer, config persistence.
 - `crypto/`, `data/fixtures/` — crypto primitives + bundled fixtures.

@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/naughtbot/cli/crypto"
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/log"
 	"github.com/naughtbot/cli/internal/shared/sysinfo"
 	"github.com/naughtbot/cli/internal/shared/transport"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 var sshLog = log.New("ssh")
@@ -32,7 +32,7 @@ func buildEnrollPayload(label, algorithm string, processInfo sysinfo.ProcessInfo
 	if algorithm == config.AlgorithmEd25519 {
 		algDisplay = "Ed25519"
 	}
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Algorithm", Value: algDisplay},
 		{Label: "Label", Value: label},
 	}
@@ -40,13 +40,12 @@ func buildEnrollPayload(label, algorithm string, processInfo sysinfo.ProcessInfo
 	icon := "key.fill"
 	historyTitle := "SSH Key Enrolled"
 	subtitle := "SSH key enrollment"
-	payload := protocol.EnrollPayload{
-		Type:       protocol.Enroll,
-		Purpose:    protocol.Ssh,
+	payload := payloads.MailboxEnrollRequestPayloadV1{
+		Purpose:    payloads.Ssh,
 		Label:      &label,
 		Algorithm:  &algorithm,
 		SourceInfo: processInfo.ToSourceInfo(),
-		Display: &protocol.GenericDisplaySchema{
+		Display: &payloads.DisplaySchema{
 			Title:        "Enroll SSH Key?",
 			HistoryTitle: &historyTitle,
 			Subtitle:     &subtitle,
@@ -67,14 +66,14 @@ func parseEnrollResponse(decrypted []byte, requestedAlgorithm, label string) (*c
 
 	// Use algorithm from response if provided, otherwise use requested algorithm
 	respAlgorithm := requestedAlgorithm
-	if response.Algorithm != nil && *response.Algorithm != "" {
-		respAlgorithm = *response.Algorithm
+	if response.Algorithm != "" {
+		respAlgorithm = response.Algorithm
 	}
 
-	if response.PublicKeyHex == nil {
+	if response.PublicKeyHex == "" {
 		return nil, fmt.Errorf("response missing public key")
 	}
-	publicKey, err := hex.DecodeString(*response.PublicKeyHex)
+	publicKey, err := hex.DecodeString(response.PublicKeyHex)
 	if err != nil {
 		return nil, fmt.Errorf("invalid public key hex: %w", err)
 	}
@@ -107,15 +106,10 @@ func parseEnrollResponse(decrypted []byte, requestedAlgorithm, label string) (*c
 	}
 
 	// Public key hex for display/logging
-	publicKeyHex := *response.PublicKeyHex
-
-	iosKeyID := ""
-	if response.IosKeyId != nil {
-		iosKeyID = *response.IosKeyId
-	}
+	publicKeyHex := response.PublicKeyHex
 
 	keyMeta := &config.KeyMetadata{
-		IOSKeyID:  iosKeyID,
+		IOSKeyID:  response.DeviceKeyId,
 		Label:     label,
 		PublicKey: publicKey,
 		Algorithm: respAlgorithm,
@@ -171,6 +165,7 @@ func EnrollSSHKey(cfg *config.Config, label string, algorithm string) (*config.K
 	fmt.Fprintf(os.Stderr, "Approve key generation on iOS device...\n")
 
 	result, err := transport.NewRequestBuilder(cfg).
+		WithSkipApprovalProofVerifier().
 		WithTimeout(config.DefaultSigningTimeout).
 		WithExpiration(int(config.DefaultSigningTimeout.Seconds())).
 		Send(ctx, json.RawMessage(payloadBytes))

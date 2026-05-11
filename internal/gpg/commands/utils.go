@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/naughtbot/cli/internal/gpg/openpgp"
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/client"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/sysinfo"
 	"github.com/naughtbot/cli/internal/shared/transport"
 	"github.com/naughtbot/cli/internal/shared/util"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 // GPGFingerprint computes the GPG V4 fingerprint (40-char hex) from a key's metadata.
@@ -103,7 +103,7 @@ func RequestGPGSignature(cfg *config.Config, key *config.KeyMetadata, rawData []
 
 	// Build display fields starting with key info
 	signatureIcon := "signature"
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Key", Value: key.Label, Icon: &signatureIcon},
 		{Label: "Fingerprint", Value: GPGFingerprint(key), Monospace: util.Ptr(true)},
 	}
@@ -127,32 +127,32 @@ func RequestGPGSignature(cfg *config.Config, key *config.KeyMetadata, rawData []
 				git := actionCtx.OperationContext.GitContext
 				historyTitle = "Git Commit Signed"
 				fields = append(fields,
-					protocol.DisplayField{Label: "Commit Message", Value: git.Message, Multiline: util.Ptr(true)},
-					protocol.DisplayField{Label: "Author", Value: fmt.Sprintf("%s <%s>", git.AuthorName, git.AuthorEmail)},
+					payloads.DisplayField{Label: "Commit Message", Value: git.Message, Multiline: util.Ptr(true)},
+					payloads.DisplayField{Label: "Author", Value: fmt.Sprintf("%s <%s>", git.AuthorName, git.AuthorEmail)},
 				)
 				if git.Branch != "" {
-					fields = append(fields, protocol.DisplayField{Label: "Branch", Value: git.Branch, Monospace: util.Ptr(true)})
+					fields = append(fields, payloads.DisplayField{Label: "Branch", Value: git.Branch, Monospace: util.Ptr(true)})
 				}
 				if git.RepoName != "" {
-					fields = append(fields, protocol.DisplayField{Label: "Repository", Value: git.RepoName})
+					fields = append(fields, payloads.DisplayField{Label: "Repository", Value: git.RepoName})
 				}
 			} else if actionCtx.OperationContext.GeneralContext != nil {
 				gen := actionCtx.OperationContext.GeneralContext
 				fields = append(fields,
-					protocol.DisplayField{Label: "Operation", Value: gen.OperationType},
-					protocol.DisplayField{Label: "Input", Value: gen.InputSource},
-					protocol.DisplayField{Label: "Size", Value: fmt.Sprintf("%d bytes", gen.ContentSize)},
+					payloads.DisplayField{Label: "Operation", Value: gen.OperationType},
+					payloads.DisplayField{Label: "Input", Value: gen.InputSource},
+					payloads.DisplayField{Label: "Size", Value: fmt.Sprintf("%d bytes", gen.ContentSize)},
 				)
 				if gen.ContentPreview != "" {
-					fields = append(fields, protocol.DisplayField{Label: "Content Preview", Value: gen.ContentPreview, Monospace: util.Ptr(true), Multiline: util.Ptr(true)})
+					fields = append(fields, payloads.DisplayField{Label: "Content Preview", Value: gen.ContentPreview, Monospace: util.Ptr(true), Multiline: util.Ptr(true)})
 				}
 			}
 		}
 	}
 
-	// Build GPG sign payload using generated type with GenericDisplaySchema
+	// Build GPG sign payload using the generated e2ee-payloads request type.
 	icon := "signature"
-	display := &protocol.GenericDisplaySchema{
+	display := &payloads.DisplaySchema{
 		Title:        title,
 		HistoryTitle: &historyTitle,
 		Subtitle:     subtitle,
@@ -160,15 +160,17 @@ func RequestGPGSignature(cfg *config.Config, key *config.KeyMetadata, rawData []
 		Fields:       fields,
 	}
 
-	payload := protocol.GpgSignPayload{
-		Type:       protocol.GpgSign,
-		Display:    display,
-		RawData:    rawData,
-		SourceInfo: processInfo.ToSourceInfo(),
-		// Mailbox/poll path strips signingPublicKey from the envelope, so
-		// embed the hex-encoded public key in the encrypted payload so iOS
-		// can resolve which on-device GPG primary key to use for signing.
-		IosKeyId: util.Ptr(key.Hex()),
+	// The mailbox/poll path strips the signing public key from the envelope, so
+	// the on-device key handle (IOSKeyID, populated from
+	// MailboxEnrollResponseApprovedV1.DeviceKeyId during enrollment) is
+	// embedded in the encrypted payload so the approver can resolve which
+	// on-device GPG primary key to use for signing. iOS / Android / etc. all
+	// consume the same field name.
+	payload := payloads.MailboxGpgSignRequestPayloadV1{
+		DeviceKeyId: key.IOSKeyID,
+		Display:     display,
+		RawData:     rawData,
+		SourceInfo:  processInfo.ToSourceInfo(),
 	}
 
 	fmt.Fprintf(os.Stderr, "Waiting for approval on iOS device...\n")
@@ -205,7 +207,7 @@ type GPGDecryptContext struct {
 // RequestGPGDecrypt sends PKESK data to iOS for session key unwrapping.
 // iOS performs ECDH key agreement and returns the unwrapped session key.
 // The CLI then uses this session key to decrypt the SEIPD data locally.
-func RequestGPGDecrypt(cfg *config.Config, key *config.KeyMetadata, pkesk *protocol.PkeskData, decryptCtx *GPGDecryptContext) (*client.GPGDecryptResponse, error) {
+func RequestGPGDecrypt(cfg *config.Config, key *config.KeyMetadata, pkesk *payloads.PkeskData, decryptCtx *GPGDecryptContext) (*client.GPGDecryptResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DefaultSigningTimeout)
 	defer cancel()
 
@@ -214,7 +216,7 @@ func RequestGPGDecrypt(cfg *config.Config, key *config.KeyMetadata, pkesk *proto
 
 	// Build display fields for GPG decryption
 	lockIcon := "lock.open"
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Key", Value: key.Label, Icon: &lockIcon},
 		{Label: "Fingerprint", Value: GPGFingerprint(key), Monospace: util.Ptr(true)},
 	}
@@ -222,36 +224,41 @@ func RequestGPGDecrypt(cfg *config.Config, key *config.KeyMetadata, pkesk *proto
 	// Add decryption context fields
 	if decryptCtx != nil {
 		if decryptCtx.SenderKeyID != "" {
-			fields = append(fields, protocol.DisplayField{Label: "Sender Key ID", Value: decryptCtx.SenderKeyID, Monospace: util.Ptr(true)})
+			fields = append(fields, payloads.DisplayField{Label: "Sender Key ID", Value: decryptCtx.SenderKeyID, Monospace: util.Ptr(true)})
 		}
 		if decryptCtx.EncryptedTo != "" {
-			fields = append(fields, protocol.DisplayField{Label: "Encrypted To", Value: decryptCtx.EncryptedTo})
+			fields = append(fields, payloads.DisplayField{Label: "Encrypted To", Value: decryptCtx.EncryptedTo})
 		}
 		if decryptCtx.MessageSize > 0 {
-			fields = append(fields, protocol.DisplayField{Label: "Message Size", Value: fmt.Sprintf("%d bytes", decryptCtx.MessageSize)})
+			fields = append(fields, payloads.DisplayField{Label: "Message Size", Value: fmt.Sprintf("%d bytes", decryptCtx.MessageSize)})
 		}
 	}
 
-	// Build GPG decrypt payload using generated type with GenericDisplaySchema
+	// Build GPG decrypt payload using the generated e2ee-payloads request type.
 	icon := "lock.open"
 	historyTitle := "GPG Decryption"
-	display := &protocol.GenericDisplaySchema{
+	display := &payloads.DisplaySchema{
 		Title:        "Decrypt message?",
 		HistoryTitle: &historyTitle,
 		Icon:         &icon,
 		Fields:       fields,
 	}
 
-	payload := protocol.GpgDecryptPayload{
-		Type:          protocol.GpgDecrypt,
+	// PKESK-based decryption: the approver unwraps the session key from the
+	// PKESK packet using the on-device ECDH subkey selected by DeviceKeyId
+	// (the enrollment-time `device_key_id` stored in IOSKeyID).
+	// EncryptedData is required by the schema but unused on this path, so
+	// pass an empty byte slice.
+	var pkeskVal payloads.PkeskData
+	if pkesk != nil {
+		pkeskVal = *pkesk
+	}
+	payload := payloads.MailboxGpgDecryptRequestPayloadV1{
+		DeviceKeyId:   key.IOSKeyID,
 		Display:       display,
-		EncryptedData: []byte{}, // Not used for PKESK-based decryption; iOS unwraps session key from PKESK
-		Pkesk:         pkesk,
+		EncryptedData: []byte{},
+		Pkesk:         pkeskVal,
 		SourceInfo:    processInfo.ToSourceInfo(),
-		// Mailbox/poll path strips signingPublicKey from the envelope, so
-		// embed the hex-encoded public key in the encrypted payload so iOS
-		// can resolve which on-device GPG encryption subkey to use for ECDH.
-		IosKeyId: util.Ptr(key.Hex()),
 	}
 
 	fmt.Fprintf(os.Stderr, "Waiting for approval on iOS device...\n")

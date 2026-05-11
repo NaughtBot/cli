@@ -16,19 +16,19 @@ import (
 	"fmt"
 	"strings"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/sysinfo"
 	"github.com/naughtbot/cli/internal/shared/util"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
-// collectSigningDisplay builds a GenericDisplaySchema and SourceInfo for a PKCS#11 signing request.
-func collectSigningDisplay(key *config.KeyMetadata, mechanism string, dataLen int) (*protocol.GenericDisplaySchema, *protocol.SourceInfo) {
+// collectSigningDisplay builds a DisplaySchema and SourceInfo for a PKCS#11 signing request.
+func collectSigningDisplay(key *config.KeyMetadata, mechanism string, dataLen int) (*payloads.DisplaySchema, *payloads.SourceInfo) {
 	processInfo := sysinfo.GetProcessInfo()
 	appName := getApplicationName(processInfo.ProcessChain)
 
 	signIcon := "signature"
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Key", Value: key.Label, Icon: &signIcon},
 		{Label: "Public Key", Value: key.Hex(), Monospace: util.Ptr(true)},
 		{Label: "Mechanism", Value: mechanism, Monospace: util.Ptr(true)},
@@ -39,7 +39,7 @@ func collectSigningDisplay(key *config.KeyMetadata, mechanism string, dataLen in
 	icon := "signature"
 	historyTitle := "PKCS#11 Signature"
 	subtitle := fmt.Sprintf("Sign with key: %s", key.Label)
-	return &protocol.GenericDisplaySchema{
+	return &payloads.DisplaySchema{
 		Title:        "Sign data?",
 		HistoryTitle: &historyTitle,
 		Subtitle:     &subtitle,
@@ -48,13 +48,13 @@ func collectSigningDisplay(key *config.KeyMetadata, mechanism string, dataLen in
 	}, processInfo.ToSourceInfo()
 }
 
-// collectDeriveDisplay builds a GenericDisplaySchema and SourceInfo for a PKCS#11 ECDH derive request.
-func collectDeriveDisplay(key *config.KeyMetadata, mechanism string, kdf string) (*protocol.GenericDisplaySchema, *protocol.SourceInfo) {
+// collectDeriveDisplay builds a DisplaySchema and SourceInfo for a PKCS#11 ECDH derive request.
+func collectDeriveDisplay(key *config.KeyMetadata, mechanism string, kdf string) (*payloads.DisplaySchema, *payloads.SourceInfo) {
 	processInfo := sysinfo.GetProcessInfo()
 	appName := getApplicationName(processInfo.ProcessChain)
 
 	keyIcon := "key.horizontal"
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Key", Value: key.Label, Icon: &keyIcon},
 		{Label: "Public Key", Value: key.Hex(), Monospace: util.Ptr(true)},
 		{Label: "Mechanism", Value: mechanism, Monospace: util.Ptr(true)},
@@ -65,7 +65,7 @@ func collectDeriveDisplay(key *config.KeyMetadata, mechanism string, kdf string)
 	icon := "key.horizontal"
 	historyTitle := "ECDH Derive"
 	subtitle := fmt.Sprintf("ECDH key agreement with key: %s", key.Label)
-	return &protocol.GenericDisplaySchema{
+	return &payloads.DisplaySchema{
 		Title:        "ECDH Key Exchange?",
 		HistoryTitle: &historyTitle,
 		Subtitle:     &subtitle,

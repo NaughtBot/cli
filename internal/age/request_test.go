@@ -7,26 +7,25 @@ import (
 	"strings"
 	"testing"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 func TestAgeUnwrapPayloadMarshalJSON(t *testing.T) {
 	icon := "lock.open"
 	tests := []struct {
 		name    string
-		request protocol.AgeUnwrapPayload
+		request payloads.MailboxAgeUnwrapRequestPayloadV1
 	}{
 		{
 			name: "basic request",
-			request: protocol.AgeUnwrapPayload{
-				Type:               protocol.AgeUnwrapPayloadTypeAgeUnwrap,
+			request: payloads.MailboxAgeUnwrapRequestPayloadV1{
 				EphemeralPublicHex: strings.Repeat("aa", 32),
 				WrappedFileKey:     bytes.Repeat([]byte{0xBB}, 32),
 				RecipientPublicHex: strings.Repeat("cc", 32),
-				Display: &protocol.GenericDisplaySchema{
+				Display: &payloads.DisplaySchema{
 					Title: "Decrypt file?",
 					Icon:  &icon,
-					Fields: []protocol.DisplayField{
+					Fields: []payloads.DisplayField{
 						{Label: "File", Value: "test.age"},
 					},
 				},
@@ -34,8 +33,7 @@ func TestAgeUnwrapPayloadMarshalJSON(t *testing.T) {
 		},
 		{
 			name: "request without display info",
-			request: protocol.AgeUnwrapPayload{
-				Type:               protocol.AgeUnwrapPayloadTypeAgeUnwrap,
+			request: payloads.MailboxAgeUnwrapRequestPayloadV1{
 				EphemeralPublicHex: strings.Repeat("11", 32),
 				WrappedFileKey:     bytes.Repeat([]byte{0x22}, 32),
 				RecipientPublicHex: strings.Repeat("33", 32),
@@ -43,15 +41,14 @@ func TestAgeUnwrapPayloadMarshalJSON(t *testing.T) {
 		},
 		{
 			name: "request with long filename",
-			request: protocol.AgeUnwrapPayload{
-				Type:               protocol.AgeUnwrapPayloadTypeAgeUnwrap,
+			request: payloads.MailboxAgeUnwrapRequestPayloadV1{
 				EphemeralPublicHex: strings.Repeat("44", 32),
 				WrappedFileKey:     bytes.Repeat([]byte{0x55}, 32),
 				RecipientPublicHex: strings.Repeat("66", 32),
-				Display: &protocol.GenericDisplaySchema{
+				Display: &payloads.DisplaySchema{
 					Title: "Decrypt file?",
 					Icon:  &icon,
-					Fields: []protocol.DisplayField{
+					Fields: []payloads.DisplayField{
 						{Label: "File", Value: "/very/long/path/to/some/deeply/nested/directory/with/encrypted/file.age"},
 						{Label: "Size", Value: "104857600 bytes"},
 					},
@@ -68,14 +65,9 @@ func TestAgeUnwrapPayloadMarshalJSON(t *testing.T) {
 			}
 
 			// Verify it can be unmarshaled back
-			var decoded protocol.AgeUnwrapPayload
+			var decoded payloads.MailboxAgeUnwrapRequestPayloadV1
 			if err := json.Unmarshal(data, &decoded); err != nil {
 				t.Fatalf("json.Unmarshal() error = %v", err)
-			}
-
-			// Verify fields match
-			if decoded.Type != tt.request.Type {
-				t.Errorf("Type = %v, want %v", decoded.Type, tt.request.Type)
 			}
 
 			if decoded.EphemeralPublicHex != tt.request.EphemeralPublicHex {
@@ -102,15 +94,14 @@ func TestAgeUnwrapPayloadMarshalJSON(t *testing.T) {
 
 func TestAgeUnwrapPayloadJSONFieldNames(t *testing.T) {
 	icon := "lock.open"
-	request := protocol.AgeUnwrapPayload{
-		Type:               protocol.AgeUnwrapPayloadTypeAgeUnwrap,
+	request := payloads.MailboxAgeUnwrapRequestPayloadV1{
 		EphemeralPublicHex: hex.EncodeToString([]byte{0x01, 0x02}),
 		WrappedFileKey:     []byte{0x03, 0x04},
 		RecipientPublicHex: hex.EncodeToString([]byte{0x05, 0x06}),
-		Display: &protocol.GenericDisplaySchema{
+		Display: &payloads.DisplaySchema{
 			Title: "Decrypt file?",
 			Icon:  &icon,
-			Fields: []protocol.DisplayField{
+			Fields: []payloads.DisplayField{
 				{Label: "File", Value: "test.age"},
 			},
 		},
@@ -118,12 +109,11 @@ func TestAgeUnwrapPayloadJSONFieldNames(t *testing.T) {
 
 	data, _ := json.Marshal(request)
 
-	// Verify JSON field names match OpenAPI spec (camelCase)
+	// Verify JSON field names match e2ee-payloads schema (snake_case)
 	expectedFields := []string{
-		`"type"`,
-		`"ephemeralPublicHex"`,
-		`"wrappedFileKey"`,
-		`"recipientPublicHex"`,
+		`"ephemeral_public_hex"`,
+		`"wrapped_file_key"`,
+		`"recipient_public_hex"`,
 		`"display"`,
 		`"title"`,
 		`"fields"`,
@@ -145,48 +135,38 @@ func TestUnwrapResponseIsSuccess(t *testing.T) {
 		{
 			name: "success with file key",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					FileKey: ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
-				},
+				FileKey: ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
 			},
 			want: true,
 		},
 		{
 			name: "error with code",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					ErrorCode:    ptrErrorCode(1),
-					ErrorMessage: ptrString("user declined"),
-				},
+				ErrorCode:    ptrInt(1),
+				ErrorMessage: ptrString("user declined"),
 			},
 			want: false,
 		},
 		{
 			name: "no file key returned",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					FileKey: nil,
-				},
+				FileKey: nil,
 			},
 			want: false,
 		},
 		{
 			name: "empty file key",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					FileKey: ptrBytes([]byte{}),
-				},
+				FileKey: ptrBytes([]byte{}),
 			},
 			want: false,
 		},
 		{
 			name: "error code with file key",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					FileKey:      ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
-					ErrorCode:    ptrErrorCode(1), // Error code takes precedence
-					ErrorMessage: ptrString("should not happen"),
-				},
+				FileKey:      ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
+				ErrorCode:    ptrInt(1), // Error code takes precedence
+				ErrorMessage: ptrString("should not happen"),
 			},
 			want: false,
 		},
@@ -211,19 +191,15 @@ func TestUnwrapResponseError(t *testing.T) {
 		{
 			name: "success returns nil",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					FileKey: ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
-				},
+				FileKey: ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
 			},
 			wantNil: true,
 		},
 		{
 			name: "error with code and message",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					ErrorCode:    ptrErrorCode(42),
-					ErrorMessage: ptrString("user declined the request"),
-				},
+				ErrorCode:    ptrInt(42),
+				ErrorMessage: ptrString("user declined the request"),
 			},
 			wantNil:     false,
 			errContains: "code 42",
@@ -231,10 +207,8 @@ func TestUnwrapResponseError(t *testing.T) {
 		{
 			name: "error with code and message - contains message",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					ErrorCode:    ptrErrorCode(42),
-					ErrorMessage: ptrString("user declined the request"),
-				},
+				ErrorCode:    ptrInt(42),
+				ErrorMessage: ptrString("user declined the request"),
 			},
 			wantNil:     false,
 			errContains: "user declined",
@@ -242,9 +216,7 @@ func TestUnwrapResponseError(t *testing.T) {
 		{
 			name: "no file key returns error",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					FileKey: nil,
-				},
+				FileKey: nil,
 			},
 			wantNil:     false,
 			errContains: "no file key",
@@ -252,10 +224,8 @@ func TestUnwrapResponseError(t *testing.T) {
 		{
 			name: "error code zero",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					ErrorCode:    ptrErrorCode(0),
-					ErrorMessage: ptrString("unknown error"),
-				},
+				ErrorCode:    ptrInt(0),
+				ErrorMessage: ptrString("unknown error"),
 			},
 			wantNil:     false,
 			errContains: "code 0",
@@ -292,18 +262,14 @@ func TestUnwrapResponseMarshalJSON(t *testing.T) {
 		{
 			name: "success response",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					FileKey: ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
-				},
+				FileKey: ptrBytes(bytes.Repeat([]byte{0x42}, 16)),
 			},
 		},
 		{
 			name: "error response",
 			response: UnwrapResponse{
-				AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-					ErrorCode:    ptrErrorCode(1),
-					ErrorMessage: ptrString("test error"),
-				},
+				ErrorCode:    ptrInt(1),
+				ErrorMessage: ptrString("test error"),
 			},
 		},
 	}
@@ -332,12 +298,12 @@ func TestUnwrapResponseMarshalJSON(t *testing.T) {
 	}
 }
 
-func TestGenericDisplaySchemaMarshal(t *testing.T) {
+func TestDisplaySchemaMarshal(t *testing.T) {
 	icon := "lock.open"
-	display := protocol.GenericDisplaySchema{
+	display := payloads.DisplaySchema{
 		Title: "Decrypt file?",
 		Icon:  &icon,
-		Fields: []protocol.DisplayField{
+		Fields: []payloads.DisplayField{
 			{Label: "File", Value: "test.age"},
 			{Label: "Size", Value: "1024 bytes"},
 		},
@@ -397,9 +363,7 @@ func TestUnwrapResponseGetFileKey(t *testing.T) {
 	// non-nil FileKey
 	fileKey := []byte{0x01, 0x02, 0x03}
 	r = &UnwrapResponse{
-		AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-			FileKey: &fileKey,
-		},
+		FileKey: &fileKey,
 	}
 	if got := r.GetFileKey(); !bytes.Equal(got, fileKey) {
 		t.Errorf("GetFileKey() = %v, want %v", got, fileKey)
@@ -415,9 +379,7 @@ func TestUnwrapResponseGetErrorCode(t *testing.T) {
 
 	// non-nil ErrorCode
 	r = &UnwrapResponse{
-		AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-			ErrorCode: ptrErrorCode(42),
-		},
+		ErrorCode: ptrInt(42),
 	}
 	got := r.GetErrorCode()
 	if got == nil {
@@ -437,20 +399,17 @@ func TestUnwrapResponseGetErrorMessage(t *testing.T) {
 
 	// non-nil ErrorMessage
 	r = &UnwrapResponse{
-		AgeUnwrapResponse: protocol.AgeUnwrapResponse{
-			ErrorMessage: ptrString("something went wrong"),
-		},
+		ErrorMessage: ptrString("something went wrong"),
 	}
 	if got := r.GetErrorMessage(); got != "something went wrong" {
 		t.Errorf("GetErrorMessage() = %q, want %q", got, "something went wrong")
 	}
 }
 
-// Helper functions to create pointers for generated types
+// Helper functions to create pointers
 
-func ptrErrorCode(i int) *protocol.AckAgentCommonSigningErrorCode {
-	code := protocol.AckAgentCommonSigningErrorCode(i)
-	return &code
+func ptrInt(i int) *int {
+	return &i
 }
 
 func ptrString(s string) *string {

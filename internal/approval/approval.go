@@ -43,23 +43,31 @@ type NonceStore interface {
 
 // ApprovalChallenge is the canonical verifier-issued challenge that the
 // attested-key proof binds to.
+//
+// JSON tags use snake_case to match the canonical
+// e2ee-payloads schema (`ApprovalChallenge` in
+// `github.com/naughtbot/e2ee-payloads/go`); the canonical-JSON hash is
+// committed to the Longfellow approval circuit so the casing must match the
+// approver-side serialization byte-for-byte.
 type ApprovalChallenge struct {
 	Version       string `json:"version"`
 	Nonce         string `json:"nonce"`
-	RequestID     string `json:"requestId"`
-	PlaintextHash string `json:"plaintextHash"`
+	RequestID     string `json:"request_id"`
+	PlaintextHash string `json:"plaintext_hash"`
 }
 
 // ApprovalProofStatement is the public Longfellow statement carried alongside a
 // circuit-native proof.
+//
+// JSON tags use snake_case to match the canonical e2ee-payloads schema.
 type ApprovalProofStatement struct {
-	IssuerPublicKeyHex string `json:"issuerPublicKeyHex"`
-	AppIDHashHex       string `json:"appIdHashHex"`
-	PolicyVersion      uint32 `json:"policyVersion"`
+	IssuerPublicKeyHex string `json:"issuer_public_key_hex"`
+	AppIDHashHex       string `json:"app_id_hash_hex"`
+	PolicyVersion      uint32 `json:"policy_version"`
 	Now                int64  `json:"now"`
-	ChallengeNonceHex  string `json:"challengeNonceHex"`
-	AudienceHashHex    string `json:"audienceHashHex"`
-	ApprovalHashHex    string `json:"approvalHashHex"`
+	ChallengeNonceHex  string `json:"challenge_nonce_hex"`
+	AudienceHashHex    string `json:"audience_hash_hex"`
+	ApprovalHashHex    string `json:"approval_hash_hex"`
 }
 
 // ApprovalAttestationV1 carries the service-issued AttestationV1 bytes and raw

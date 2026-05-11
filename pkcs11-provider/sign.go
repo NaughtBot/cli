@@ -46,15 +46,15 @@ import "C"
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
 	"unsafe"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/client"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/transport"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 // signInit initializes a signing operation
@@ -72,9 +72,17 @@ func signInit(sessionHandle C.CK_SESSION_HANDLE, mechanism C.CK_MECHANISM_PTR, k
 		return C.CKR_ARGUMENTS_BAD
 	}
 
-	// Validate mechanism
+	// Validate mechanism. The e2ee-payloads `pkcs11_sign` schema only
+	// expresses the hash-then-sign path, so we reject `CKM_ECDSA`
+	// (sign-pre-hashed-digest) at SignInit rather than letting callers
+	// initialise and then fail at C_Sign / C_SignFinal time. Callers
+	// should use `CKM_ECDSA_SHA256` (sign-after-hashing) instead.
 	mech := mechanism.mechanism
-	if mech != C.CKM_ECDSA && mech != C.CKM_ECDSA_SHA256 {
+	if mech == C.CKM_ECDSA {
+		logError("Unsupported mechanism CKM_ECDSA: the e2ee-payloads pkcs11_sign schema only supports CKM_ECDSA_SHA256 (sign-after-hashing); the approver hashes raw_data with SHA-256 itself")
+		return C.CKR_MECHANISM_INVALID
+	}
+	if mech != C.CKM_ECDSA_SHA256 {
 		logError("Unsupported mechanism: %s", ckmToString(mech))
 		return C.CKR_MECHANISM_INVALID
 	}
@@ -135,23 +143,12 @@ func sign(sessionHandle C.CK_SESSION_HANDLE, data C.CK_BYTE_PTR, dataLen C.CK_UL
 		dataBytes = append(sess.signCtx.data, dataBytes...)
 	}
 
-	// For CKM_ECDSA_SHA256, hash the data first
-	var digest []byte
-	if sess.signCtx.mechanism == C.CKM_ECDSA_SHA256 {
-		hash := sha256.Sum256(dataBytes)
-		digest = hash[:]
-	} else {
-		// CKM_ECDSA expects pre-hashed data (32 bytes for P-256)
-		if len(dataBytes) != 32 {
-			logError("CKM_ECDSA expects 32-byte pre-hashed data, got %d bytes", len(dataBytes))
-			sess.signCtx = nil
-			return C.CKR_DATA_LEN_RANGE
-		}
-		digest = dataBytes
-	}
-
-	// Perform the signing via NaughtBot relay
-	sig, err := performSigning(sess.cfg, sess.signCtx.key, digest, ckmToString(sess.signCtx.mechanism))
+	// The e2ee-payloads `MailboxPkcs11SignRequestPayloadV1.raw_data` contract
+	// is "raw data to sign (preimage); approver computes SHA-256 and signs the
+	// resulting digest", so we send the preimage as-is. CKM_ECDSA
+	// (sign-pre-hashed-digest) callers are already rejected at SignInit.
+	preimage := dataBytes
+	sig, err := performSigning(sess.cfg, sess.signCtx.key, preimage, ckmToString(sess.signCtx.mechanism))
 	if err != nil {
 		logError("Signing failed: %v", err)
 		sess.signCtx = nil
@@ -196,19 +193,24 @@ func signFinal(sessionHandle C.CK_SESSION_HANDLE, signature C.CK_BYTE_PTR, signa
 	return sign(sessionHandle, nil, 0, signature, signatureLen)
 }
 
-// performSigning sends a signing request via the exchanges-based transport
-// and returns the signature bytes from the decrypted response.
-func performSigning(cfg *config.Config, key *config.KeyMetadata, digest []byte, mechanism string) ([]byte, error) {
+// performSigning sends a signing request via the mailbox transport and
+// returns the signature bytes from the decrypted response. The preimage is
+// the raw data to sign; the approver computes SHA-256 over it per the
+// e2ee-payloads `pkcs11_sign` contract.
+func performSigning(cfg *config.Config, key *config.KeyMetadata, preimage []byte, mechanism string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DefaultSigningTimeout)
 	defer cancel()
 
-	// Build display + payload using generated protocol types.
-	display, sourceInfo := collectSigningDisplay(key, mechanism, len(digest))
-	payload := &protocol.CustomPayload{
-		Type:       protocol.Custom,
-		Display:    *display, // CustomPayload.Display is not a pointer
-		RawData:    digest,
-		SourceInfo: sourceInfo,
+	// Build display + payload using generated e2ee-payloads types.
+	// DeviceKeyId is the on-device key handle returned during enrollment
+	// (stored as IOSKeyID); key.Hex() is the public-key bytes used for
+	// CKA_ID and display fields only.
+	display, sourceInfo := collectSigningDisplay(key, mechanism, len(preimage))
+	payload := &payloads.MailboxPkcs11SignRequestPayloadV1{
+		DeviceKeyId: key.IOSKeyID,
+		Display:     display,
+		RawData:     preimage,
+		SourceInfo:  sourceInfo,
 	}
 
 	fmt.Fprintf(os.Stderr, "Waiting for approval on iOS device...\n")
@@ -221,21 +223,14 @@ func performSigning(cfg *config.Config, key *config.KeyMetadata, digest []byte, 
 		return nil, err
 	}
 
-	var signResponse protocol.SignatureResponse
+	var signResponse client.SigningResponse
 	if err := json.Unmarshal(decrypted, &signResponse); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-	if signResponse.ErrorCode != nil && *signResponse.ErrorCode != 0 {
-		errMsg := "unknown error"
-		if signResponse.ErrorMessage != nil {
-			errMsg = *signResponse.ErrorMessage
-		}
-		return nil, fmt.Errorf("signing rejected: %s", errMsg)
+	if !signResponse.IsSuccess() {
+		return nil, signResponse.Error()
 	}
-	if signResponse.Signature == nil {
-		return nil, fmt.Errorf("missing signature in response")
-	}
-	signature := *signResponse.Signature
+	signature := signResponse.GetSignature()
 	if len(signature) != p256SignatureLen {
 		return nil, fmt.Errorf("invalid signature length: expected %d, got %d", p256SignatureLen, len(signature))
 	}

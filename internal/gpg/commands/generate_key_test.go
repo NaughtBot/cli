@@ -4,36 +4,30 @@ import (
 	"encoding/hex"
 	"testing"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestEnrollResponseWrapper_NilFields(t *testing.T) {
-	// Test that all getter methods handle nil fields gracefully
-	w := &enrollResponseWrapper{}
+func TestEnrollApprovedAccessors_ZeroValues(t *testing.T) {
+	// All helper accessors should handle zero / nil fields gracefully on a
+	// freshly constructed approved-response payload.
+	w := &payloads.MailboxEnrollResponseApprovedV1{}
 
-	assert.Equal(t, "", w.getIosKeyId())
-	assert.Equal(t, "", w.getFingerprint())
-	assert.Nil(t, w.getPublicKey())
-	assert.Equal(t, "", w.getAlgorithm())
-	assert.Nil(t, w.getErrorCode())
-	assert.Equal(t, "", w.getErrorMessage())
-	assert.Equal(t, int64(0), w.getKeyCreationTimestamp())
-	assert.Nil(t, w.getUserIdSignature())
-	assert.Nil(t, w.getSubkeySignature())
-	assert.Nil(t, w.getEncryptionPublicKey())
-	assert.Equal(t, "", w.getEncryptionFingerprint())
+	assert.Equal(t, "", effectiveKeyID(w))
+	assert.Equal(t, "", optString(w.Fingerprint))
+	assert.Nil(t, decodedPublicKey(w))
+	assert.Equal(t, "", w.Algorithm)
+	assert.Equal(t, int64(0), optInt64(w.KeyCreationTimestamp))
+	assert.Nil(t, optBytes(w.UserIdSignature))
+	assert.Nil(t, optBytes(w.SubkeySignature))
+	assert.Nil(t, decodedEncryptionPublicKey(w))
+	assert.Equal(t, "", optString(w.EncryptionFingerprint))
 }
 
-func TestEnrollResponseWrapper_WithValues(t *testing.T) {
-	iosKeyID := "ios-key-123"
+func TestEnrollApprovedAccessors_WithValues(t *testing.T) {
 	fingerprint := "AABB1122AABB1122AABB1122AABB1122AABB1122"
 	publicKey := []byte("public-key-bytes")
 	publicKeyHex := hex.EncodeToString(publicKey)
-	algorithm := "p256"
-	errorCode := protocol.AckAgentCommonSigningErrorCode(4)
-	errorMessage := "key exists"
 	timestamp := int64(1700000000)
 	userIDSig := []byte("userid-sig")
 	subkeySig := []byte("subkey-sig")
@@ -41,34 +35,27 @@ func TestEnrollResponseWrapper_WithValues(t *testing.T) {
 	encPubKeyHex := hex.EncodeToString(encPubKey)
 	encFingerprint := "CCDD3344CCDD3344CCDD3344CCDD3344CCDD3344"
 
-	w := &enrollResponseWrapper{}
-	w.IosKeyId = &iosKeyID
-	w.Fingerprint = &fingerprint
-	w.PublicKeyHex = &publicKeyHex
-	w.Algorithm = &algorithm
-	w.ErrorCode = &errorCode
-	w.ErrorMessage = &errorMessage
-	w.KeyCreationTimestamp = &timestamp
-	w.UserIdSignature = &userIDSig
-	w.SubkeySignature = &subkeySig
-	w.EncryptionPublicKeyHex = &encPubKeyHex
-	w.EncryptionFingerprint = &encFingerprint
+	w := &payloads.MailboxEnrollResponseApprovedV1{
+		Algorithm:              "p256",
+		DeviceKeyId:            "device-key-123",
+		Fingerprint:            &fingerprint,
+		PublicKeyHex:           publicKeyHex,
+		KeyCreationTimestamp:   &timestamp,
+		UserIdSignature:        &userIDSig,
+		SubkeySignature:        &subkeySig,
+		EncryptionPublicKeyHex: &encPubKeyHex,
+		EncryptionFingerprint:  &encFingerprint,
+	}
 
-	assert.Equal(t, iosKeyID, w.getIosKeyId())
-	assert.Equal(t, fingerprint, w.getFingerprint())
-	assert.Equal(t, publicKey, w.getPublicKey())
-	assert.Equal(t, algorithm, w.getAlgorithm())
-
-	errCode := w.getErrorCode()
-	require.NotNil(t, errCode)
-	assert.Equal(t, 4, *errCode)
-
-	assert.Equal(t, errorMessage, w.getErrorMessage())
-	assert.Equal(t, timestamp, w.getKeyCreationTimestamp())
-	assert.Equal(t, userIDSig, w.getUserIdSignature())
-	assert.Equal(t, subkeySig, w.getSubkeySignature())
-	assert.Equal(t, encPubKey, w.getEncryptionPublicKey())
-	assert.Equal(t, encFingerprint, w.getEncryptionFingerprint())
+	assert.Equal(t, "device-key-123", effectiveKeyID(w))
+	assert.Equal(t, fingerprint, optString(w.Fingerprint))
+	assert.Equal(t, publicKey, decodedPublicKey(w))
+	assert.Equal(t, "p256", w.Algorithm)
+	assert.Equal(t, timestamp, optInt64(w.KeyCreationTimestamp))
+	assert.Equal(t, userIDSig, optBytes(w.UserIdSignature))
+	assert.Equal(t, subkeySig, optBytes(w.SubkeySignature))
+	assert.Equal(t, encPubKey, decodedEncryptionPublicKey(w))
+	assert.Equal(t, encFingerprint, optString(w.EncryptionFingerprint))
 }
 
 func TestKeyGenerationInfo_Structure(t *testing.T) {
@@ -95,38 +82,38 @@ func TestKeyGenerationInfo_Structure(t *testing.T) {
 	assert.NotEmpty(t, info.EncryptionFingerprint)
 }
 
-func TestGetEffectiveKeyID_PrefersIosKeyId(t *testing.T) {
-	iosKeyId := "ios-key-123"
-	id := "uuid-456"
-	r := enrollResponseWrapper{EnrollResponse: protocol.EnrollResponse{
-		IosKeyId: &iosKeyId,
-		Id:       &id,
-	}}
-	assert.Equal(t, "ios-key-123", r.getEffectiveKeyID())
+// effectiveKeyID prefers DeviceKeyId (the platform-agnostic name in the new
+// schema for what used to be IosKeyId), falling back to Id (the GPG UUID).
+func TestEffectiveKeyID_PrefersDeviceKeyId(t *testing.T) {
+	r := &payloads.MailboxEnrollResponseApprovedV1{
+		DeviceKeyId: "device-key-123",
+		Id:          "uuid-456",
+	}
+	assert.Equal(t, "device-key-123", effectiveKeyID(r))
 }
 
-func TestGetEffectiveKeyID_FallsBackToId(t *testing.T) {
-	id := "uuid-456"
-	r := enrollResponseWrapper{EnrollResponse: protocol.EnrollResponse{
-		IosKeyId: nil,
-		Id:       &id,
-	}}
-	assert.Equal(t, "uuid-456", r.getEffectiveKeyID())
+func TestEffectiveKeyID_FallsBackToId(t *testing.T) {
+	r := &payloads.MailboxEnrollResponseApprovedV1{
+		DeviceKeyId: "",
+		Id:          "uuid-456",
+	}
+	assert.Equal(t, "uuid-456", effectiveKeyID(r))
 }
 
-func TestGetEffectiveKeyID_EmptyIosKeyIdFallsBackToId(t *testing.T) {
-	empty := ""
-	id := "uuid-456"
-	r := enrollResponseWrapper{EnrollResponse: protocol.EnrollResponse{
-		IosKeyId: &empty,
-		Id:       &id,
-	}}
-	assert.Equal(t, "uuid-456", r.getEffectiveKeyID())
+// Regression: an empty DeviceKeyId (rather than missing) should still fall
+// through to Id. The new schema requires DeviceKeyId on the wire but Go's
+// zero value is the empty string, so the helper must treat "" as "not set".
+func TestEffectiveKeyID_EmptyDeviceKeyIdFallsBackToId(t *testing.T) {
+	r := &payloads.MailboxEnrollResponseApprovedV1{
+		DeviceKeyId: "",
+		Id:          "uuid-456",
+	}
+	assert.Equal(t, "uuid-456", effectiveKeyID(r))
 }
 
-func TestGetEffectiveKeyID_BothNilReturnsEmpty(t *testing.T) {
-	r := enrollResponseWrapper{EnrollResponse: protocol.EnrollResponse{}}
-	assert.Equal(t, "", r.getEffectiveKeyID())
+func TestEffectiveKeyID_BothEmptyReturnsEmpty(t *testing.T) {
+	r := &payloads.MailboxEnrollResponseApprovedV1{}
+	assert.Equal(t, "", effectiveKeyID(r))
 }
 
 func TestGenerateKey_AlgorithmValidation(t *testing.T) {

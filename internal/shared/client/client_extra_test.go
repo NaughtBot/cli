@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 	"time"
-
-	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 func TestNewClient_ValidURL(t *testing.T) {
@@ -38,13 +36,13 @@ func TestSigningResponse_IsSuccess(t *testing.T) {
 		resp SigningResponse
 		want bool
 	}{
-		{"success", SigningResponse{protocol.SignatureResponse{Signature: &sig}}, true},
-		{"no signature", SigningResponse{protocol.SignatureResponse{}}, false},
-		{"empty signature", SigningResponse{protocol.SignatureResponse{Signature: ptr([]byte{})}}, false},
-		{"error code present", SigningResponse{protocol.SignatureResponse{
+		{"success", SigningResponse{Signature: &sig}, true},
+		{"no signature", SigningResponse{}, false},
+		{"empty signature", SigningResponse{Signature: ptr([]byte{})}, false},
+		{"error code present", SigningResponse{
 			ErrorCode: ptrCode(1),
 			Signature: &sig,
-		}}, false},
+		}, false},
 	}
 
 	for _, tt := range tests {
@@ -58,7 +56,7 @@ func TestSigningResponse_IsSuccess(t *testing.T) {
 
 func TestSigningResponse_GetSignature(t *testing.T) {
 	sig := []byte("my-sig")
-	sr := &SigningResponse{protocol.SignatureResponse{Signature: &sig}}
+	sr := &SigningResponse{Signature: &sig}
 	if got := sr.GetSignature(); string(got) != "my-sig" {
 		t.Errorf("GetSignature() = %q, want my-sig", got)
 	}
@@ -86,9 +84,9 @@ func TestGPGSignResponse_IsSuccess(t *testing.T) {
 		resp GPGSignResponse
 		want bool
 	}{
-		{"success", GPGSignResponse{protocol.GpgSignatureResponse{ArmoredSignature: &armored}}, true},
-		{"empty signature", GPGSignResponse{protocol.GpgSignatureResponse{ArmoredSignature: ptr2("")}}, false},
-		{"no signature", GPGSignResponse{protocol.GpgSignatureResponse{}}, false},
+		{"success", GPGSignResponse{ArmoredSignature: &armored}, true},
+		{"empty signature", GPGSignResponse{ArmoredSignature: ptr2("")}, false},
+		{"no signature", GPGSignResponse{}, false},
 	}
 
 	for _, tt := range tests {
@@ -102,7 +100,7 @@ func TestGPGSignResponse_IsSuccess(t *testing.T) {
 
 func TestGPGSignResponse_GetArmoredSignature(t *testing.T) {
 	armored := "-----BEGIN PGP SIGNATURE-----"
-	r := &GPGSignResponse{protocol.GpgSignatureResponse{ArmoredSignature: &armored}}
+	r := &GPGSignResponse{ArmoredSignature: &armored}
 	if got := r.GetArmoredSignature(); got != armored {
 		t.Errorf("GetArmoredSignature() = %q, want %q", got, armored)
 	}
@@ -121,9 +119,9 @@ func TestGPGDecryptResponse_IsSuccess(t *testing.T) {
 		resp GPGDecryptResponse
 		want bool
 	}{
-		{"success", GPGDecryptResponse{protocol.GpgDecryptResponse{SessionKey: &key}}, true},
-		{"no key", GPGDecryptResponse{protocol.GpgDecryptResponse{}}, false},
-		{"empty key", GPGDecryptResponse{protocol.GpgDecryptResponse{SessionKey: ptr([]byte{})}}, false},
+		{"success", GPGDecryptResponse{SessionKey: &key}, true},
+		{"no key", GPGDecryptResponse{}, false},
+		{"empty key", GPGDecryptResponse{SessionKey: ptr([]byte{})}, false},
 	}
 
 	for _, tt := range tests {
@@ -137,7 +135,7 @@ func TestGPGDecryptResponse_IsSuccess(t *testing.T) {
 
 func TestGPGDecryptResponse_GetAlgorithm(t *testing.T) {
 	algo := int32(9) // AES256
-	r := &GPGDecryptResponse{protocol.GpgDecryptResponse{Algorithm: &algo}}
+	r := &GPGDecryptResponse{Algorithm: &algo}
 	if got := r.GetAlgorithm(); got != 9 {
 		t.Errorf("GetAlgorithm() = %d, want 9", got)
 	}
@@ -206,7 +204,6 @@ func TestPoll_CancelsDuringTransientErrorBackoff(t *testing.T) {
 // Helpers
 func ptr(v []byte) *[]byte  { return &v }
 func ptr2(v string) *string { return &v }
-func ptrCode(v int) *protocol.AckAgentCommonSigningErrorCode {
-	c := protocol.AckAgentCommonSigningErrorCode(v)
-	return &c
+func ptrCode(v int) *int {
+	return &v
 }

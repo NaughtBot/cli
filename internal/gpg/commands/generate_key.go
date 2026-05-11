@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/naughtbot/cli/internal/gpg/cli"
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/sysinfo"
 	"github.com/naughtbot/cli/internal/shared/transport"
 	"github.com/naughtbot/cli/internal/shared/util"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 const keyPurposeGPG = "gpg"
@@ -123,122 +123,71 @@ func GenerateKey(cfg *config.Config, args *cli.Args) {
 }
 
 // KeyGenerationInfo contains the response from iOS key generation.
-// JSON tags use camelCase to match the OpenAPI spec (protocol.EnrollResponse).
 type KeyGenerationInfo struct {
 	ID          string `json:"id"`
 	Fingerprint string `json:"fingerprint"`
-	PublicKey   []byte `json:"publicKey"`
+	PublicKey   []byte `json:"public_key"`
 	Algorithm   string `json:"algorithm,omitempty"` // p256 or ed25519
 
 	// Signature data for OpenPGP export (created at key generation time)
-	KeyCreationTimestamp int64  `json:"keyCreationTimestamp,omitempty"` // Unix timestamp used for fingerprint
-	UserIDSignature      []byte `json:"userIdSignature,omitempty"`      // Self-certification signature (0x13)
-	SubkeySignature      []byte `json:"subkeySignature,omitempty"`      // Subkey binding signature (0x18)
+	KeyCreationTimestamp int64  `json:"key_creation_timestamp,omitempty"` // Unix timestamp used for fingerprint
+	UserIDSignature      []byte `json:"user_id_signature,omitempty"`      // Self-certification signature (0x13)
+	SubkeySignature      []byte `json:"subkey_signature,omitempty"`       // Subkey binding signature (0x18)
 
 	// ECDH encryption subkey data (for GPG P-256 keys)
-	EncryptionPublicKey   []byte `json:"encryptionPublicKey,omitempty"`   // ECDH P-256 public key (33 bytes compressed: 0x02/0x03 || X)
-	EncryptionFingerprint string `json:"encryptionFingerprint,omitempty"` // 40-char hex fingerprint of ECDH subkey
+	EncryptionPublicKey   []byte `json:"encryption_public_key,omitempty"`   // ECDH P-256 public key (33 bytes compressed: 0x02/0x03 || X)
+	EncryptionFingerprint string `json:"encryption_fingerprint,omitempty"` // 40-char hex fingerprint of ECDH subkey
 }
 
-// GPGKeyGenPayload is an alias for protocol.EnrollPayload which includes all
-// GPG key generation fields (IncludeCertification, Purpose, Algorithm, Label, Display).
-type GPGKeyGenPayload = protocol.EnrollPayload
+// GPGKeyGenPayload is the e2ee-payloads enroll request payload used by the GPG
+// key generation flow.
+type GPGKeyGenPayload = payloads.MailboxEnrollRequestPayloadV1
 
-// enrollResponseWrapper wraps protocol.EnrollResponse with helper methods.
-type enrollResponseWrapper struct {
-	protocol.EnrollResponse
-}
-
-func (r *enrollResponseWrapper) getIosKeyId() string {
-	if r.IosKeyId == nil {
-		return ""
+// effectiveKeyID returns the best available key identifier from the approved
+// enroll response. Prefers DeviceKeyId (set on every successful enrollment),
+// falls back to Id (the GPG UUID).
+func effectiveKeyID(r *payloads.MailboxEnrollResponseApprovedV1) string {
+	if r.DeviceKeyId != "" {
+		return r.DeviceKeyId
 	}
-	return *r.IosKeyId
+	return r.Id
 }
 
-// getEffectiveKeyID returns the best available key identifier.
-// Prefers IosKeyId (set by iOS), falls back to Id (UUID set by Android).
-func (r *enrollResponseWrapper) getEffectiveKeyID() string {
-	if r.IosKeyId != nil && *r.IosKeyId != "" {
-		return *r.IosKeyId
-	}
-	if r.Id != nil && *r.Id != "" {
-		return *r.Id
-	}
-	return ""
-}
-
-func (r *enrollResponseWrapper) getFingerprint() string {
-	if r.Fingerprint == nil {
-		return ""
-	}
-	return *r.Fingerprint
-}
-
-func (r *enrollResponseWrapper) getPublicKey() []byte {
-	if r.PublicKeyHex == nil {
+func decodedPublicKey(r *payloads.MailboxEnrollResponseApprovedV1) []byte {
+	if r.PublicKeyHex == "" {
 		return nil
 	}
-	key, _ := hex.DecodeString(*r.PublicKeyHex)
+	key, _ := hex.DecodeString(r.PublicKeyHex)
 	return key
 }
 
-func (r *enrollResponseWrapper) getAlgorithm() string {
-	if r.Algorithm == nil {
-		return ""
-	}
-	return *r.Algorithm
-}
-
-func (r *enrollResponseWrapper) getErrorCode() *int {
-	if r.ErrorCode == nil {
-		return nil
-	}
-	code := int(*r.ErrorCode)
-	return &code
-}
-
-func (r *enrollResponseWrapper) getErrorMessage() string {
-	if r.ErrorMessage == nil {
-		return ""
-	}
-	return *r.ErrorMessage
-}
-
-func (r *enrollResponseWrapper) getKeyCreationTimestamp() int64 {
-	if r.KeyCreationTimestamp == nil {
-		return 0
-	}
-	return *r.KeyCreationTimestamp
-}
-
-func (r *enrollResponseWrapper) getUserIdSignature() []byte {
-	if r.UserIdSignature == nil {
-		return nil
-	}
-	return *r.UserIdSignature
-}
-
-func (r *enrollResponseWrapper) getSubkeySignature() []byte {
-	if r.SubkeySignature == nil {
-		return nil
-	}
-	return *r.SubkeySignature
-}
-
-func (r *enrollResponseWrapper) getEncryptionPublicKey() []byte {
-	if r.EncryptionPublicKeyHex == nil {
+func decodedEncryptionPublicKey(r *payloads.MailboxEnrollResponseApprovedV1) []byte {
+	if r.EncryptionPublicKeyHex == nil || *r.EncryptionPublicKeyHex == "" {
 		return nil
 	}
 	key, _ := hex.DecodeString(*r.EncryptionPublicKeyHex)
 	return key
 }
 
-func (r *enrollResponseWrapper) getEncryptionFingerprint() string {
-	if r.EncryptionFingerprint == nil {
+func optString(s *string) string {
+	if s == nil {
 		return ""
 	}
-	return *r.EncryptionFingerprint
+	return *s
+}
+
+func optInt64(v *int64) int64 {
+	if v == nil {
+		return 0
+	}
+	return *v
+}
+
+func optBytes(b *[]byte) []byte {
+	if b == nil {
+		return nil
+	}
+	return *b
 }
 
 func requestKeyGeneration(cfg *config.Config, purpose, label, algorithm string) (*KeyGenerationInfo, error) {
@@ -252,7 +201,7 @@ func requestKeyGeneration(cfg *config.Config, purpose, label, algorithm string) 
 	}
 
 	processInfo := sysinfo.GetProcessInfo()
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Purpose", Value: "GPG Signing"},
 		{Label: "Algorithm", Value: algorithmDisplay},
 		{Label: "User ID", Value: label},
@@ -262,13 +211,12 @@ func requestKeyGeneration(cfg *config.Config, purpose, label, algorithm string) 
 	historyTitle := "GPG Key Generated"
 	subtitle := label
 	payload := &GPGKeyGenPayload{
-		Type:                 protocol.Enroll,
-		Purpose:              protocol.AckAgentCommonKeyPurpose(purpose),
+		Purpose:              payloads.KeyPurpose(purpose),
 		Label:                &label,
 		Algorithm:            &algorithm,
 		IncludeCertification: util.Ptr(true),
 		SourceInfo:           processInfo.ToSourceInfo(),
-		Display: &protocol.GenericDisplaySchema{
+		Display: &payloads.DisplaySchema{
 			Title:        "Generate GPG Key?",
 			HistoryTitle: &historyTitle,
 			Subtitle:     &subtitle,
@@ -283,21 +231,20 @@ func requestKeyGeneration(cfg *config.Config, purpose, label, algorithm string) 
 		return nil, fmt.Errorf("waiting for response failed: %w", err)
 	}
 
-	parsed, err := transport.ParseEnrollResponse(decrypted)
+	response, err := transport.ParseEnrollResponse(decrypted)
 	if err != nil {
 		return nil, err
 	}
-	response := enrollResponseWrapper{EnrollResponse: *parsed}
 
 	return &KeyGenerationInfo{
-		ID:                    response.getEffectiveKeyID(),
-		Fingerprint:           response.getFingerprint(),
-		PublicKey:             response.getPublicKey(),
-		Algorithm:             response.getAlgorithm(),
-		KeyCreationTimestamp:  response.getKeyCreationTimestamp(),
-		UserIDSignature:       response.getUserIdSignature(),
-		SubkeySignature:       response.getSubkeySignature(),
-		EncryptionPublicKey:   response.getEncryptionPublicKey(),
-		EncryptionFingerprint: response.getEncryptionFingerprint(),
+		ID:                    effectiveKeyID(response),
+		Fingerprint:           optString(response.Fingerprint),
+		PublicKey:             decodedPublicKey(response),
+		Algorithm:             response.Algorithm,
+		KeyCreationTimestamp:  optInt64(response.KeyCreationTimestamp),
+		UserIDSignature:       optBytes(response.UserIdSignature),
+		SubkeySignature:       optBytes(response.SubkeySignature),
+		EncryptionPublicKey:   decodedEncryptionPublicKey(response),
+		EncryptionFingerprint: optString(response.EncryptionFingerprint),
 	}, nil
 }
