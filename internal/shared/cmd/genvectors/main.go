@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
+	"github.com/naughtbot/cli/crypto"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"

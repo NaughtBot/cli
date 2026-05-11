@@ -5,8 +5,8 @@ import (
 	"compress/flate"
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
+	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

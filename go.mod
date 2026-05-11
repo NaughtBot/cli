@@ -1,22 +1,22 @@
-module github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli
+module github.com/naughtbot/cli
 
-go 1.24.1
+go 1.26.0
 
 require (
 	filippo.io/age v1.3.0
-	github.com/BurntSushi/toml v1.6.0
-	github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go v0.1.12
-	github.com/clarifiedlabs/ackagent-monorepo/relay-api/go v0.0.0-00010101000000-000000000000
 	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/google/uuid v1.6.0
-	github.com/oapi-codegen/runtime v1.3.1
+	github.com/naughtbot/api v0.19.0
+	github.com/naughtbot/attested-key-zk/bindings/go v0.2.2
+	github.com/naughtbot/e2ee-payloads/go v0.1.0
+	github.com/oapi-codegen/runtime v1.4.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.3
 	github.com/zitadel/oidc/v3 v3.45.1
-	golang.org/x/crypto v0.45.0
+	golang.org/x/crypto v0.46.0
 	golang.org/x/oauth2 v0.35.0
 )
 
@@ -52,12 +52,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/term v0.38.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go => ../ackagent-api/go
-
-replace github.com/clarifiedlabs/ackagent-monorepo/relay-api/go => ../relay-api/go

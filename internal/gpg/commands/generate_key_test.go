@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

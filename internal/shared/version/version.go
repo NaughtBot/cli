@@ -2,5 +2,5 @@
 package version
 
 // Version is set at build time via ldflags:
-// -X github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/version.Version=<version>
+// -X github.com/naughtbot/cli/internal/shared/version.Version=<version>
 var Version = "dev"

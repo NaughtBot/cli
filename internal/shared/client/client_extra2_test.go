@@ -3,7 +3,7 @@ package client
 import (
 	"testing"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 func TestSigningResponse_Error_WithErrorCode(t *testing.T) {

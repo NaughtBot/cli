@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/ssh"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/ssh"
 )
 
 // PrintEnrolledKeys prints the list of enrolled keys to the given writer.

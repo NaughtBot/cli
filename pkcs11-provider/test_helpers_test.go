@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // This file provides Go-level constants and helpers for tests that cannot use

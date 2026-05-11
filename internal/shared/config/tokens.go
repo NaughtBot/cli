@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/tokens"
+	"github.com/naughtbot/cli/internal/shared/tokens"
 )
 
 // SetUserAccount stores a new user account for the specified profile.

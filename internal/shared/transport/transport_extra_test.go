@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 func TestRelayTransport_SetPollConfig(t *testing.T) {

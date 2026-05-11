@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
 )
 
 // randReader is used for generating random bytes. Can be overridden for testing.

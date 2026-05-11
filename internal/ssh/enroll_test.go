@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sysinfo"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/util"
+	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/sysinfo"
+	"github.com/naughtbot/cli/internal/shared/util"
 )
 
 func TestBuildEnrollPayload(t *testing.T) {

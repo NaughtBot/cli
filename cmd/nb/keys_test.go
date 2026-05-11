@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	sharedsync "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sync"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
+	sharedsync "github.com/naughtbot/cli/internal/shared/sync"
 )
 
 func TestKeysCommand_Registered(t *testing.T) {

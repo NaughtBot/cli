@@ -10,7 +10,7 @@ import (
 
 	"filippo.io/age"
 	"filippo.io/age/plugin"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 func TestParseIdentity(t *testing.T) {

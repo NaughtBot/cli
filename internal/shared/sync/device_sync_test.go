@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package sync
 
 import (
@@ -7,9 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 func TestSyncDevices_RejectsSoftwareAttestedDevicesFromRoutingSet(t *testing.T) {

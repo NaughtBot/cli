@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 // signingError converts an error code and message into a descriptive error.

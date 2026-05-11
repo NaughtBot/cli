@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/ackagent-sdk/go/approval"
+	"github.com/naughtbot/cli/internal/approval"
 )
 
 type mockApprovalProofVerifier struct {

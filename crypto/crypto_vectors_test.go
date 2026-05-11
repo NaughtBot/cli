@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	sharedtestdata "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/testdata"
+	sharedtestdata "github.com/naughtbot/cli/internal/shared/testdata"
 )
 
 type encryptionVectors struct {

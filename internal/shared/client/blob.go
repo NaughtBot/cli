@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 // Package client provides HTTP communication with the backend services.
 package client
 
@@ -8,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	blobapi "github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go/blob"
+	blobapi "github.com/naughtbot/api/blob"
 )
 
 // BlobClient handles communication with the blob service using the generated OpenAPI client.

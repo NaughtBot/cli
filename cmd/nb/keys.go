@@ -9,10 +9,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/log"
 )
 
 var keysLog = log.New("keys")

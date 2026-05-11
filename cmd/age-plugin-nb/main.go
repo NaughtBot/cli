@@ -32,7 +32,7 @@ import (
 
 	"filippo.io/age"
 	"filippo.io/age/plugin"
-	oobsignage "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/age"
+	oobsignage "github.com/naughtbot/cli/internal/age"
 )
 
 // debugEnabled reports whether OOBSIGN_DEBUG is set to a non-empty value.

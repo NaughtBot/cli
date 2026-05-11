@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
+	"github.com/naughtbot/cli/crypto"
 )
 
 // Request represents a signing request to be sent via a transport.

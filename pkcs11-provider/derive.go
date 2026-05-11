@@ -85,9 +85,9 @@ import (
 	"os"
 	"unsafe"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/transport"
+	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/transport"
 )
 
 // deriveKey performs ECDH key derivation

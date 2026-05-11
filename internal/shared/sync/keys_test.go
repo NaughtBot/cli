@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package sync
 
 import (
@@ -9,11 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-
-	blobapi "github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go/blob"
+	blobapi "github.com/naughtbot/api/blob"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // makeKeyMetadata creates a KeyMetadata with the given fields for testing.

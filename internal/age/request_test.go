@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 func TestAgeUnwrapPayloadMarshalJSON(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // createTestConfig creates a test config with the given keys in the active profile

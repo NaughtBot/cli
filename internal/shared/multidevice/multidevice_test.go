@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/google/uuid"
 )
 

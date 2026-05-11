@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	sharedtestdata "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/testdata"
+	sharedtestdata "github.com/naughtbot/cli/internal/shared/testdata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

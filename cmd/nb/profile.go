@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/log"
 )
 
 var profileLog = log.New("profile")

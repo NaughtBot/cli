@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
 )
 
 // ECDHCurve identifies which ECDH curve to use.

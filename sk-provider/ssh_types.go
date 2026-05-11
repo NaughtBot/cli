@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 // EnrollRequest is sent to iOS for key enrollment.

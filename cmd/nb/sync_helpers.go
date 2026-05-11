@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	sharedsync "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sync"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
+	sharedsync "github.com/naughtbot/cli/internal/shared/sync"
 )
 
 var syncKeysFunc = sharedsync.SyncKeys

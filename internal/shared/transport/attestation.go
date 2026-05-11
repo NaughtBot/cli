@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/ackagent-sdk/go/approval"
+	"github.com/naughtbot/cli/internal/approval"
 )
 
 // approvalProofWrapper extracts the approval proof and error fields from any
