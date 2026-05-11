@@ -213,8 +213,17 @@ func TestSignBufferTooSmall(t *testing.T) {
 	}
 }
 
-// TestSignECDSADataLenRange verifies CKR_DATA_LEN_RANGE for wrong-size pre-hashed data.
-func TestSignECDSADataLenRange(t *testing.T) {
+// TestSignECDSAUnsupported verifies that CKM_ECDSA is rejected at sign time.
+//
+// The new `MailboxPkcs11SignRequestPayloadV1` schema only models the
+// hash-then-sign path (CKM_ECDSA_SHA256). The previous behavior where the
+// caller could pass a pre-computed 32-byte digest and have it signed
+// directly is no longer expressible: the approver hashes `raw_data`
+// internally, so re-hashing a digest would produce SHA-256 of SHA-256 and
+// the signature would not verify. We therefore reject CKM_ECDSA at sign
+// time rather than silently producing an unverifiable signature; callers
+// should switch to CKM_ECDSA_SHA256 (sign-after-hashing).
+func TestSignECDSAUnsupported(t *testing.T) {
 	bridgeResetGlobalState()
 	bridgeInitialize()
 	defer bridgeFinalize()
@@ -222,15 +231,15 @@ func TestSignECDSADataLenRange(t *testing.T) {
 	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
 	bridgeSignInit(handle, ckmECDSA, 1)
 
-	badData := make([]byte, 16) // Not 32 bytes
+	badData := make([]byte, 16)
 	rv := bridgeSignBadDataLen(handle, badData)
-	if rv != ckrDataLenRange {
-		t.Fatalf("sign(wrong data len) = %s, want CKR_DATA_LEN_RANGE", rvName(rv))
+	if rv != ckrMechanismInvalid {
+		t.Fatalf("sign(CKM_ECDSA) = %s, want CKR_MECHANISM_INVALID", rvName(rv))
 	}
 
 	sess := bridgeGetSession(handle)
 	if !bridgeIsSignCtxNil(sess) {
-		t.Error("signCtx should be nil after CKR_DATA_LEN_RANGE error")
+		t.Error("signCtx should be nil after CKR_MECHANISM_INVALID error")
 	}
 }
 

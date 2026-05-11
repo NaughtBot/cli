@@ -10,9 +10,13 @@ import (
 
 // approvalProofWrapper extracts the approval proof and error fields from any
 // decrypted response type without depending on the full response schema.
+//
+// JSON tags use snake_case to match the e2ee-payloads schema (`approval_proof`
+// success branch, `error_code` failure branch). The wire format the approver
+// emits is the generated schema, not the legacy camelCase shape.
 type approvalProofWrapper struct {
-	ApprovalProof json.RawMessage `json:"approvalProof"`
-	ErrorCode     *int            `json:"errorCode"`
+	ApprovalProof json.RawMessage `json:"approval_proof"`
+	ErrorCode     *int            `json:"error_code"`
 }
 
 // VerifyApprovalProofFromJSON extracts and verifies the approval proof from a
@@ -21,7 +25,7 @@ type approvalProofWrapper struct {
 // If skip is true, verification is bypassed entirely.
 // Rejection/error responses skip proof verification because they do not carry an
 // approval proof.
-// Otherwise, a successful approval response must contain an approvalProof that
+// Otherwise, a successful approval response must contain an approval_proof that
 // matches the expected challenge and verifies against the configured
 // Longfellow verifier.
 func VerifyApprovalProofFromJSON(

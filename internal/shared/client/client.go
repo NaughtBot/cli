@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/naughtbot/cli/internal/shared/log"
@@ -56,6 +57,9 @@ type Client struct {
 func NewClient(baseURL, deviceID string) (*Client, error) {
 	if baseURL == "" {
 		return nil, fmt.Errorf("baseURL is required")
+	}
+	if _, err := url.ParseRequestURI(baseURL); err != nil {
+		return nil, fmt.Errorf("invalid base URL: %w", err)
 	}
 	return &Client{
 		baseURL:    baseURL,

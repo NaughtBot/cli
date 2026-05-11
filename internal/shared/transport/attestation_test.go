@@ -36,7 +36,7 @@ func TestVerifyApprovalProofFromJSON_SkipFlag(t *testing.T) {
 
 func TestVerifyApprovalProofFromJSON_MissingVerifierFailsClosed(t *testing.T) {
 	err := VerifyApprovalProofFromJSON(
-		[]byte(`{"status":"approved","approvalProof":{"version":"approval-attested-key-proof/v1"}}`),
+		[]byte(`{"status":"approved","approval_proof":{"version":"approval-attested-key-proof/v1"}}`),
 		testApprovalChallenge(),
 		nil,
 		false,
@@ -81,7 +81,7 @@ func TestVerifyApprovalProofFromJSON_InvalidJSON(t *testing.T) {
 
 func TestVerifyApprovalProofFromJSON_RejectionResponseSkipsVerification(t *testing.T) {
 	err := VerifyApprovalProofFromJSON(
-		[]byte(`{"errorCode":1,"errorMessage":"User rejected the request"}`),
+		[]byte(`{"error_code":1,"error_message":"User rejected the request"}`),
 		testApprovalChallenge(),
 		nil,
 		false,
@@ -95,22 +95,22 @@ func TestVerifyApprovalProofFromJSON_ChallengeMismatch(t *testing.T) {
 	err := VerifyApprovalProofFromJSON(
 		[]byte(`{
 			"status":"approved",
-			"approvalProof":{
+			"approval_proof":{
 				"version":"approval-attested-key-proof/v1",
 				"challenge":{
 					"version":"approval-challenge/v1",
 					"nonce":"wrong-nonce",
-					"requestId":"req-1",
-					"plaintextHash":"sha256:abc123"
+					"request_id":"req-1",
+					"plaintext_hash":"sha256:abc123"
 				},
 				"statement":{
-					"issuerPublicKeyHex":"02abc",
-					"appIdHashHex":"abc123",
-					"policyVersion":1,
+					"issuer_public_key_hex":"02abc",
+					"app_id_hash_hex":"abc123",
+					"policy_version":1,
 					"now":1714761600,
-					"challengeNonceHex":"abc123",
-					"audienceHashHex":"abc123",
-					"approvalHashHex":"abc123"
+					"challenge_nonce_hex":"abc123",
+					"audience_hash_hex":"abc123",
+					"approval_hash_hex":"abc123"
 				},
 				"attestation":{
 					"version":"approval-attestation/v1",
@@ -139,22 +139,22 @@ func TestVerifyApprovalProofFromJSON_VerifierCalled(t *testing.T) {
 	err := VerifyApprovalProofFromJSON(
 		[]byte(`{
 			"status":"approved",
-			"approvalProof":{
+			"approval_proof":{
 				"version":"approval-attested-key-proof/v1",
 				"challenge":{
 					"version":"approval-challenge/v1",
 					"nonce":"nonce-123",
-					"requestId":"req-1",
-					"plaintextHash":"sha256:abc123"
+					"request_id":"req-1",
+					"plaintext_hash":"sha256:abc123"
 				},
 				"statement":{
-					"issuerPublicKeyHex":"02abc",
-					"appIdHashHex":"abc123",
-					"policyVersion":1,
+					"issuer_public_key_hex":"02abc",
+					"app_id_hash_hex":"abc123",
+					"policy_version":1,
 					"now":1714761600,
-					"challengeNonceHex":"abc123",
-					"audienceHashHex":"abc123",
-					"approvalHashHex":"abc123"
+					"challenge_nonce_hex":"abc123",
+					"audience_hash_hex":"abc123",
+					"approval_hash_hex":"abc123"
 				},
 				"attestation":{
 					"version":"approval-attestation/v1",
@@ -191,22 +191,22 @@ func TestVerifyApprovalProofFromJSON_WrapsVerifierError(t *testing.T) {
 	err := VerifyApprovalProofFromJSON(
 		[]byte(`{
 			"status":"approved",
-			"approvalProof":{
+			"approval_proof":{
 				"version":"approval-attested-key-proof/v1",
 				"challenge":{
 					"version":"approval-challenge/v1",
 					"nonce":"nonce-123",
-					"requestId":"req-1",
-					"plaintextHash":"sha256:abc123"
+					"request_id":"req-1",
+					"plaintext_hash":"sha256:abc123"
 				},
 				"statement":{
-					"issuerPublicKeyHex":"02abc",
-					"appIdHashHex":"abc123",
-					"policyVersion":1,
+					"issuer_public_key_hex":"02abc",
+					"app_id_hash_hex":"abc123",
+					"policy_version":1,
 					"now":1714761600,
-					"challengeNonceHex":"abc123",
-					"audienceHashHex":"abc123",
-					"approvalHashHex":"abc123"
+					"challenge_nonce_hex":"abc123",
+					"audience_hash_hex":"abc123",
+					"approval_hash_hex":"abc123"
 				},
 				"attestation":{
 					"version":"approval-attestation/v1",

@@ -42,6 +42,18 @@ func executeEnroll(alg uint32, challengeBytes []byte, app string, flags uint8) (
 		logError("unsupported algorithm: %d", alg)
 		return nil, sshErrUnsupported
 	}
+	// NOTE: the e2ee-payloads `MailboxEnrollRequestPayloadV1` schema does not
+	// carry a per-enrollment challenge / application / flags blob. OpenSSH's
+	// `sk_enroll` passes these so the FIDO2 attestation statement can be
+	// bound to the challenge, but the NaughtBot approver instead returns a
+	// general key-level attestation (`MailboxEnrollResponseApprovedV1.attestation`)
+	// that the requester rebinds locally. The legacy SSH-SK challenge/flags
+	// values are therefore dropped on the wire; if the OpenSSH side ever
+	// requires the attestation to cover the supplied challenge bytes, that
+	// must be added to e2ee-payloads first (tracked separately from
+	// NaughtBot/cli#12).
+	_ = challengeBytes
+	_ = flags
 
 	cfg, err := config.Load()
 	if err != nil {

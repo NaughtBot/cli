@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -58,7 +57,7 @@ func (c *BlobClient) GetBlob(ctx context.Context, accessToken string) (*BlobResu
 	_ = ctx
 	_ = accessToken
 	httpLog.Debug("blob.GetBlob: stub")
-	return nil, errors.New("blob: not yet rewired to naughtbot/api/blob")
+	return nil, ErrNotImplemented
 }
 
 // HistoryListResponse mirrors the legacy blob history index response.
@@ -83,7 +82,7 @@ func (c *BlobClient) GetBlobHistory(ctx context.Context, accessToken string, lim
 	_ = accessToken
 	_ = limit
 	httpLog.Debug("blob.GetBlobHistory: stub")
-	return nil, errors.New("blob: not yet rewired to naughtbot/api/blob")
+	return nil, ErrNotImplemented
 }
 
 // GetBlobHistoryVersion stubs the legacy blob history detail endpoint.
@@ -92,5 +91,5 @@ func (c *BlobClient) GetBlobHistoryVersion(ctx context.Context, accessToken stri
 	_ = accessToken
 	_ = version
 	httpLog.Debug("blob.GetBlobHistoryVersion: stub")
-	return nil, errors.New("blob: not yet rewired to naughtbot/api/blob")
+	return nil, ErrNotImplemented
 }

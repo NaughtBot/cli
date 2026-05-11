@@ -46,7 +46,6 @@ import "C"
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -136,23 +135,25 @@ func sign(sessionHandle C.CK_SESSION_HANDLE, data C.CK_BYTE_PTR, dataLen C.CK_UL
 		dataBytes = append(sess.signCtx.data, dataBytes...)
 	}
 
-	// For CKM_ECDSA_SHA256, hash the data first
-	var digest []byte
-	if sess.signCtx.mechanism == C.CKM_ECDSA_SHA256 {
-		hash := sha256.Sum256(dataBytes)
-		digest = hash[:]
-	} else {
-		// CKM_ECDSA expects pre-hashed data (32 bytes for P-256)
-		if len(dataBytes) != 32 {
-			logError("CKM_ECDSA expects 32-byte pre-hashed data, got %d bytes", len(dataBytes))
-			sess.signCtx = nil
-			return C.CKR_DATA_LEN_RANGE
-		}
-		digest = dataBytes
+	// The e2ee-payloads `MailboxPkcs11SignRequestPayloadV1.raw_data` contract
+	// is "raw data to sign (preimage); approver computes SHA-256 and signs the
+	// resulting digest". So for CKM_ECDSA_SHA256 we send the preimage as-is.
+	// CKM_ECDSA callers pass a pre-computed 32-byte digest expecting the device
+	// to sign it directly, which the new schema cannot express (the approver
+	// would double-hash); reject those callers explicitly rather than silently
+	// producing an invalid signature.
+	var preimage []byte
+	switch sess.signCtx.mechanism {
+	case C.CKM_ECDSA_SHA256:
+		preimage = dataBytes
+	default: // C.CKM_ECDSA
+		logError("CKM_ECDSA (sign pre-hashed digest) is not supported by the e2ee-payloads pkcs11_sign schema; use CKM_ECDSA_SHA256 instead")
+		sess.signCtx = nil
+		return C.CKR_MECHANISM_INVALID
 	}
 
 	// Perform the signing via NaughtBot relay
-	sig, err := performSigning(sess.cfg, sess.signCtx.key, digest, ckmToString(sess.signCtx.mechanism))
+	sig, err := performSigning(sess.cfg, sess.signCtx.key, preimage, ckmToString(sess.signCtx.mechanism))
 	if err != nil {
 		logError("Signing failed: %v", err)
 		sess.signCtx = nil
@@ -197,18 +198,20 @@ func signFinal(sessionHandle C.CK_SESSION_HANDLE, signature C.CK_BYTE_PTR, signa
 	return sign(sessionHandle, nil, 0, signature, signatureLen)
 }
 
-// performSigning sends a signing request via the exchanges-based transport
-// and returns the signature bytes from the decrypted response.
-func performSigning(cfg *config.Config, key *config.KeyMetadata, digest []byte, mechanism string) ([]byte, error) {
+// performSigning sends a signing request via the mailbox transport and
+// returns the signature bytes from the decrypted response. The preimage is
+// the raw data to sign; the approver computes SHA-256 over it per the
+// e2ee-payloads `pkcs11_sign` contract.
+func performSigning(cfg *config.Config, key *config.KeyMetadata, preimage []byte, mechanism string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.DefaultSigningTimeout)
 	defer cancel()
 
 	// Build display + payload using generated e2ee-payloads types.
-	display, sourceInfo := collectSigningDisplay(key, mechanism, len(digest))
+	display, sourceInfo := collectSigningDisplay(key, mechanism, len(preimage))
 	payload := &payloads.MailboxPkcs11SignRequestPayloadV1{
 		DeviceKeyId: key.Hex(),
 		Display:     display,
-		RawData:     digest,
+		RawData:     preimage,
 		SourceInfo:  sourceInfo,
 	}
 

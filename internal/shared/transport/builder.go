@@ -369,20 +369,23 @@ func marshalPayloadWithApprovalChallenge(payload any, requestID uuid.UUID) ([]by
 		return nil, approval.ApprovalChallenge{}, fmt.Errorf("payload must be a JSON object: %w", err)
 	}
 
-	if challengeValue, ok := payloadObject["approvalChallenge"]; ok && challengeValue != nil {
+	// The e2ee-payloads schema names this field `approval_challenge`; the
+	// generated request payload structs serialize it with the snake_case
+	// JSON tag, so detection and injection both use the snake_case key.
+	if challengeValue, ok := payloadObject["approval_challenge"]; ok && challengeValue != nil {
 		challengeBytes, err := json.Marshal(challengeValue)
 		if err != nil {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal explicit approvalChallenge: %w", err)
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal explicit approval_challenge: %w", err)
 		}
 		var challenge approval.ApprovalChallenge
 		if err := json.Unmarshal(challengeBytes, &challenge); err != nil {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("decode explicit approvalChallenge: %w", err)
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("decode explicit approval_challenge: %w", err)
 		}
 		if challenge.Version != approval.ApprovalChallengeVersion {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approvalChallenge.version must be %q", approval.ApprovalChallengeVersion)
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approval_challenge.version must be %q", approval.ApprovalChallengeVersion)
 		}
 		if challenge.RequestID != requestID.String() {
-			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approvalChallenge.requestId must match request ID")
+			return nil, approval.ApprovalChallenge{}, fmt.Errorf("approval_challenge.request_id must match request ID")
 		}
 		return payloadBytes, challenge, nil
 	}
@@ -398,11 +401,11 @@ func marshalPayloadWithApprovalChallenge(payload any, requestID uuid.UUID) ([]by
 		RequestID:     requestID.String(),
 		PlaintextHash: "sha256:" + hex.EncodeToString(digest[:]),
 	}
-	payloadObject["approvalChallenge"] = challenge
+	payloadObject["approval_challenge"] = challenge
 
 	withChallenge, err := json.Marshal(payloadObject)
 	if err != nil {
-		return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal payload with approvalChallenge: %w", err)
+		return nil, approval.ApprovalChallenge{}, fmt.Errorf("marshal payload with approval_challenge: %w", err)
 	}
 	return withChallenge, challenge, nil
 }
