@@ -1,4 +1,4 @@
-.PHONY: build test coverage clean sk-provider pkcs11-provider lint format release ensure-attested-key-zk-static-lib install
+.PHONY: build age-plugin-nb test coverage clean sk-provider pkcs11-provider lint format release ensure-attested-key-zk-static-lib install
 
 # ── VERSION resolution ─────────────────────────────────────
 # Supports: make release VERSION=1.2.3 | VERSION=patch | VERSION=minor | VERSION=major

@@ -1,7 +1,7 @@
 .PHONY: all deb-amd64 deb-arm64 rpm-amd64 rpm-arm64 packages-amd64 packages-arm64 clean
 
 # Version from git tag
-VERSION := $(shell git describe --tags --match 'cli/*' --always --dirty 2>/dev/null | sed 's|^cli/||' || echo "0.0.1")
+VERSION := $(shell git describe --tags --match 'nb-cli/*' --always --dirty 2>/dev/null | sed 's|^nb-cli/||' || echo "0.0.1")
 
 # Directories
 BUILD_DIR := build
