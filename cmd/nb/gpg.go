@@ -71,19 +71,19 @@ Key Management:
 
 Examples:
   # Generate a GPG key
-  oobsign gpg --generate-key --name "Alice" --email "alice@example.com"
+  nb gpg --generate-key --name "Alice" --email "alice@example.com"
 
   # Sign a file (git uses -bsau FINGERPRINT)
-  echo "test" | oobsign gpg -bsau FINGERPRINT
+  echo "test" | nb gpg -bsau FINGERPRINT
 
   # Decrypt a message
-  oobsign gpg --decrypt encrypted.gpg
+  nb gpg --decrypt encrypted.gpg
 
   # Encrypt a message
-  echo 'Hello' | oobsign gpg -e -r <FINGERPRINT> --armor
+  echo 'Hello' | nb gpg -e -r <FINGERPRINT> --armor
 
   # Verify a detached signature (reads signed data from stdin when omitted)
-  oobsign gpg --verify signature.asc signed-data`,
+  nb gpg --verify signature.asc signed-data`,
 	Args:                  cobra.MaximumNArgs(2),
 	DisableFlagsInUseLine: true,
 	Run:                   runGPG,
@@ -219,7 +219,7 @@ func runGPG(cmd *cobra.Command, args []string) {
 }
 
 func showGPGVersion() {
-	fmt.Printf("oobsign gpg %s\n", version.Version)
+	fmt.Printf("nb gpg %s\n", version.Version)
 	fmt.Println("Compatible with GPG for Git commit signing")
-	fmt.Println("Uses iOS Secure Enclave keys via OOBSign app")
+	fmt.Println("Uses iOS Secure Enclave keys via NaughtBot app")
 }

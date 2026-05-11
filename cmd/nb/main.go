@@ -1,12 +1,12 @@
-// oobsign is a unified CLI for OOBSign desktop operations.
+// nb is a unified CLI for NaughtBot desktop operations.
 // It provides subcommands for login, GPG signing, and more.
 //
 // Usage:
 //
-//	oobsign login   # OAuth login and SAS verification
-//	oobsign gpg     # GPG-compatible signing
-//	oobsign version # Show version
-//	oobsign help    # Show help
+//	nb login   # OAuth login and SAS verification
+//	nb gpg     # GPG-compatible signing
+//	nb version # Show version
+//	nb help    # Show help
 package main
 
 import (
@@ -30,8 +30,8 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "oobsign",
-	Short:   "OOBSign CLI for hardware-backed signing",
+	Use:     "nb",
+	Short:   "NaughtBot CLI for hardware-backed signing",
 	Version: version.Version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Get values from Viper (merges flag > env > default)
@@ -63,9 +63,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&profile, "profile", "p", "", "Use specified profile (overrides active)")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "", "Set log level: debug, info, warn, error")
 
-	// Bind flags to Viper with OOBSIGN_ prefix for env vars
-	// This enables: OOBSIGN_CONFIG_DIR, OOBSIGN_PROFILE, OOBSIGN_LOG_LEVEL
-	viper.SetEnvPrefix("OOBSIGN")
+	// Bind flags to Viper with NB_ prefix for env vars
+	// This enables: NB_CONFIG_DIR, NB_PROFILE, NB_LOG_LEVEL
+	viper.SetEnvPrefix("NB")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_")) // config-dir -> CONFIG_DIR
 	viper.AutomaticEnv()
 

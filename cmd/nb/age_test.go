@@ -39,7 +39,7 @@ func TestAgeKeygenCommand_LabelFlag(t *testing.T) {
 	f := ageKeygenCmd.Flags().Lookup("label")
 	require.NotNil(t, f, "keygen should have --label flag")
 	assert.Equal(t, "l", f.Shorthand, "label flag should have -l shorthand")
-	assert.Equal(t, "oobsign-age", f.DefValue, "label should default to 'oobsign-age'")
+	assert.Equal(t, "nb-age", f.DefValue, "label should default to 'nb-age'")
 }
 
 func TestAgeIdentityCommand_SaveFlag(t *testing.T) {

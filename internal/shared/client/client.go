@@ -31,7 +31,7 @@ var (
 
 // userAgent returns the User-Agent string for HTTP requests.
 func userAgent() string {
-	return "oobsign-cli/" + version.Version
+	return "nb/" + version.Version
 }
 
 // Client handles communication with the backend service.
@@ -149,7 +149,7 @@ func (c *Client) ListUserDevices(ctx context.Context, userID, accessToken string
 
 // GetApproverKeys fetches the active approver devices that still expose stable
 // encryption keys. During the per-pairing-key rollout, the generated
-// /approver-keys endpoint only returns approver IDs, so OOBSign falls back to
+// /approver-keys endpoint only returns approver IDs, so NaughtBot falls back to
 // the device list until the pairing-key flow is wired through end to end.
 func (c *Client) GetApproverKeys(ctx context.Context, userID, accessToken string) ([]authapi.ApproverInfo, error) {
 	return c.ListUserDevices(ctx, userID, accessToken)

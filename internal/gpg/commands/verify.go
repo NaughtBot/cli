@@ -16,20 +16,20 @@ import (
 // This is invoked when git calls: gpg.program --status-fd=1 --verify <sig-file> <data-file>
 func Verify(cfg *config.Config, args *cli.Args) {
 	if !cfg.IsLoggedIn() {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: not logged in\n")
-		fmt.Fprintf(os.Stderr, "Run 'oobsign login' to login first.\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: not logged in\n")
+		fmt.Fprintf(os.Stderr, "Run 'nb login' to login first.\n")
 		os.Exit(1)
 	}
 
 	// Read signature file
 	if args.InputFile == "" {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: --verify requires a signature file\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: --verify requires a signature file\n")
 		os.Exit(1)
 	}
 
 	sigData, err := os.ReadFile(args.InputFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to read signature file: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to read signature file: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -41,7 +41,7 @@ func Verify(cfg *config.Config, args *cli.Args) {
 		data, err = os.ReadFile(args.DataFile)
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to read signed data: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to read signed data: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -52,14 +52,14 @@ func Verify(cfg *config.Config, args *cli.Args) {
 	// Dearmor signature if needed
 	sigBinary, _, err := openpgp.Dearmor(sigData)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to decode signature: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to decode signature: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Parse packets and find signature packet (tag 2)
 	packets, err := openpgp.ParseAllPackets(sigBinary)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to parse signature packets: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to parse signature packets: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -68,7 +68,7 @@ func Verify(cfg *config.Config, args *cli.Args) {
 		if pkt.Tag == openpgp.PacketTagSignature {
 			sigPacket, err = openpgp.ParseSignaturePacket(pkt.Body)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "oobsign gpg: failed to parse signature: %v\n", err)
+				fmt.Fprintf(os.Stderr, "nb gpg: failed to parse signature: %v\n", err)
 				os.Exit(1)
 			}
 			break
@@ -76,7 +76,7 @@ func Verify(cfg *config.Config, args *cli.Args) {
 	}
 
 	if sigPacket == nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: no signature packet found\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: no signature packet found\n")
 		os.Exit(1)
 	}
 
@@ -92,7 +92,7 @@ func Verify(cfg *config.Config, args *cli.Args) {
 
 	if key == nil {
 		status.NoPublicKey(keyIDStr)
-		fmt.Fprintf(os.Stderr, "oobsign gpg: public key %s not found\n", keyIDStr)
+		fmt.Fprintf(os.Stderr, "nb gpg: public key %s not found\n", keyIDStr)
 		os.Exit(2)
 	}
 
@@ -107,7 +107,7 @@ func Verify(cfg *config.Config, args *cli.Args) {
 	err = openpgp.VerifyDetached(key.PublicKey, key.IsEd25519(), data, sigPacket)
 	if err != nil {
 		status.BadSig(keyIDLong, userID)
-		fmt.Fprintf(os.Stderr, "oobsign gpg: BAD signature from \"%s\"\n", userID)
+		fmt.Fprintf(os.Stderr, "nb gpg: BAD signature from \"%s\"\n", userID)
 		os.Exit(1)
 	}
 
@@ -117,8 +117,8 @@ func Verify(cfg *config.Config, args *cli.Args) {
 	status.ValidSig(fingerprint, int64(sigPacket.CreationTime), sigPacket.PubKeyAlgo, sigPacket.HashAlgo)
 	status.TrustUltimate()
 
-	fmt.Fprintf(os.Stderr, "oobsign gpg: Good signature from \"%s\"\n", userID)
-	fmt.Fprintf(os.Stderr, "oobsign gpg: using key %s\n", openpgp.FormatFingerprintHex(fingerprint))
+	fmt.Fprintf(os.Stderr, "nb gpg: Good signature from \"%s\"\n", userID)
+	fmt.Fprintf(os.Stderr, "nb gpg: using key %s\n", openpgp.FormatFingerprintHex(fingerprint))
 
 	// Explicitly exit with 0. The defer status.Close() would close the status fd
 	// (possibly fd 1 = stdout), which can cause Go runtime cleanup issues.

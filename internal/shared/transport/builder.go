@@ -23,7 +23,7 @@ import (
 
 // ErrNoApproverKeys is returned when the account has no active approver
 // encryption keys available for multi-device wrapping.
-var ErrNoApproverKeys = fmt.Errorf("no approver device keys available: re-run 'oobsign login' or register a device")
+var ErrNoApproverKeys = fmt.Errorf("no approver device keys available: re-run 'nb login' or register a device")
 
 // ErrApprovalProofCircuitPinningRequired is returned when a managed issuer
 // does not provide the expected circuit pin for approval proof verification.
@@ -118,7 +118,7 @@ func NewRequestBuilder(cfg *config.Config) *RequestBuilder {
 	}
 
 	if !cfg.IsLoggedIn() {
-		b.err = fmt.Errorf("not logged in: please run 'oobsign login' first")
+		b.err = fmt.Errorf("not logged in: please run 'nb login' first")
 	}
 
 	return b

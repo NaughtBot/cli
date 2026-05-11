@@ -19,7 +19,7 @@ func TestListKeys_FiltersToGPGKeys(t *testing.T) {
 				Keys: []config.KeyMetadata{
 					{
 						IOSKeyID:  "ssh-key",
-						Label:     "ackagent-prod",
+						Label:     "naughtbot-prod",
 						PublicKey: mustDecodeHexForTest("aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111"),
 						Purpose:   config.KeyPurposeSSH,
 						CreatedAt: time.Now(),
@@ -34,7 +34,7 @@ func TestListKeys_FiltersToGPGKeys(t *testing.T) {
 					},
 					{
 						IOSKeyID:  "age-key",
-						Label:     "oobsign-age",
+						Label:     "nb-age",
 						PublicKey: mustDecodeHexForTest("cccc3333cccc3333cccc3333cccc3333cccc3333"),
 						Purpose:   config.KeyPurposeAge,
 						CreatedAt: time.Now(),

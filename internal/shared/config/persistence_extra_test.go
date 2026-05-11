@@ -283,10 +283,10 @@ func TestConfigDir_WithEnvOverride(t *testing.T) {
 	configDirOverride = ""
 	defer func() { configDirOverride = old }()
 
-	t.Setenv("OOBSIGN_CONFIG_DIR", "/tmp/ackagent-test-dir")
+	t.Setenv("NB_CONFIG_DIR", "/tmp/nb-test-dir")
 	dir := ConfigDir()
-	if dir != "/tmp/ackagent-test-dir" {
-		t.Errorf("ConfigDir() = %q, want /tmp/ackagent-test-dir", dir)
+	if dir != "/tmp/nb-test-dir" {
+		t.Errorf("ConfigDir() = %q, want /tmp/nb-test-dir", dir)
 	}
 }
 
@@ -299,9 +299,9 @@ func TestDeleteProfile_WithUserAccount(t *testing.T) {
 	profile, _ := cfg.GetProfile("todelete")
 	profile.UserAccount = &UserAccount{
 		UserID:                "user-1",
-		TokenRef:              "oobsign://todelete/access-token/user-1",
-		RefreshTokenRef:       "oobsign://todelete/refresh-token/user-1",
-		IdentityPrivateKeyRef: "oobsign://todelete/identity-private/user-1",
+		TokenRef:              "nb://todelete/access-token/user-1",
+		RefreshTokenRef:       "nb://todelete/refresh-token/user-1",
+		IdentityPrivateKeyRef: "nb://todelete/identity-private/user-1",
 	}
 	cfg.Save()
 
@@ -380,9 +380,9 @@ func TestRenameProfile_WithUserAccount(t *testing.T) {
 	profile, _ := cfg.GetActiveProfile()
 	profile.UserAccount = &UserAccount{
 		UserID:                "user-1",
-		TokenRef:              "oobsign://default/access-token/user-1",
-		RefreshTokenRef:       "oobsign://default/refresh-token/user-1",
-		IdentityPrivateKeyRef: "oobsign://default/identity-private/user-1",
+		TokenRef:              "nb://default/access-token/user-1",
+		RefreshTokenRef:       "nb://default/refresh-token/user-1",
+		IdentityPrivateKeyRef: "nb://default/identity-private/user-1",
 	}
 	cfg.Save()
 

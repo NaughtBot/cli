@@ -18,7 +18,7 @@ import (
 // Encryption uses only public keys - no iOS device needed.
 func Encrypt(cfg *config.Config, args *cli.Args) {
 	if len(args.Recipients) == 0 {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: no recipients specified\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: no recipients specified\n")
 		fmt.Fprintf(os.Stderr, "Use -r/--recipient to specify recipients by fingerprint or email\n")
 		os.Exit(1)
 	}
@@ -29,13 +29,13 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 	if args.InputFile != "" && args.InputFile != "-" {
 		plaintext, err = os.ReadFile(args.InputFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
 		plaintext, err = io.ReadAll(os.Stdin)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 	}
@@ -43,12 +43,12 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 	// Resolve recipients to keys
 	recipientKeys := resolveRecipients(cfg, args.Recipients)
 	if len(recipientKeys) == 0 {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: no valid recipients found\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: no valid recipients found\n")
 		os.Exit(1)
 	}
 
 	if args.Verbose {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: encrypting to %d recipient(s)\n", len(recipientKeys))
+		fmt.Fprintf(os.Stderr, "nb gpg: encrypting to %d recipient(s)\n", len(recipientKeys))
 		for _, key := range recipientKeys {
 			fmt.Fprintf(os.Stderr, "  - %s (%s)\n", key.Label, GPGFingerprint(key))
 		}
@@ -58,7 +58,7 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 	symAlgo := openpgp.SymAlgoAES256
 	sessionKey, err := gpgcrypto.GenerateSessionKey(byte(symAlgo))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to generate session key: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to generate session key: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -68,7 +68,7 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 	// Encrypt with session key (SEIPD v1 for compatibility)
 	encryptedData, err := gpgcrypto.EncryptSEIPDv1(sessionKey, literalPacket, byte(symAlgo))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: encryption failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: encryption failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -86,13 +86,13 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 		var ecdhCurve gpgcrypto.ECDHCurve
 		if key.IsEd25519() {
 			if len(encryptionPubKey) != 32 {
-				fmt.Fprintf(os.Stderr, "oobsign gpg: invalid Curve25519 public key for %s (expected 32 bytes, got %d)\n", key.Label, len(encryptionPubKey))
+				fmt.Fprintf(os.Stderr, "nb gpg: invalid Curve25519 public key for %s (expected 32 bytes, got %d)\n", key.Label, len(encryptionPubKey))
 				os.Exit(1)
 			}
 			ecdhCurve = gpgcrypto.ECDHCurveCurve25519
 		} else {
 			if len(encryptionPubKey) != crypto.PublicKeySize {
-				fmt.Fprintf(os.Stderr, "oobsign gpg: invalid public key for %s (expected %d bytes compressed, got %d)\n", key.Label, crypto.PublicKeySize, len(encryptionPubKey))
+				fmt.Fprintf(os.Stderr, "nb gpg: invalid public key for %s (expected %d bytes compressed, got %d)\n", key.Label, crypto.PublicKeySize, len(encryptionPubKey))
 				os.Exit(1)
 			}
 			ecdhCurve = gpgcrypto.ECDHCurveP256
@@ -101,7 +101,7 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 		// Get fingerprint bytes for the encryption key (subkey if available)
 		fingerprint := openpgp.ParseFingerprint(encryptionFingerprint)
 		if fingerprint == nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: invalid fingerprint for %s\n", key.Label)
+			fmt.Fprintf(os.Stderr, "nb gpg: invalid fingerprint for %s\n", key.Label)
 			os.Exit(1)
 		}
 
@@ -115,7 +115,7 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 
 		ephemeralPoint, wrappedKey, err := gpgcrypto.WrapSessionKey(params, sessionKeyWithChecksum, fingerprint)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: key wrap failed for %s: %v\n", key.Label, err)
+			fmt.Fprintf(os.Stderr, "nb gpg: key wrap failed for %s: %v\n", key.Label, err)
 			os.Exit(1)
 		}
 
@@ -125,7 +125,7 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 		// Build PKESK packet (handles both P-256 65-byte and Curve25519 33-byte ephemeral points)
 		pkeskBody, err := openpgp.BuildPKESK(keyID, ephemeralPoint, wrappedKey)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: failed to build PKESK: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: failed to build PKESK: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -153,7 +153,7 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 	if args.OutputFile != "" && args.OutputFile != "-" {
 		f, err := os.Create(args.OutputFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 		defer f.Close()
@@ -176,7 +176,7 @@ func Encrypt(cfg *config.Config, args *cli.Args) {
 func resolveRecipients(cfg *config.Config, recipients []string) []*config.KeyMetadata {
 	keys := cfg.KeysForPurpose(config.KeyPurposeGPG)
 	if len(keys) == 0 {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: no keys enrolled\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: no keys enrolled\n")
 		return nil
 	}
 
@@ -186,7 +186,7 @@ func resolveRecipients(cfg *config.Config, recipients []string) []*config.KeyMet
 		if key != nil {
 			result = append(result, key)
 		} else {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: warning: recipient not found: %s\n", recipient)
+			fmt.Fprintf(os.Stderr, "nb gpg: warning: recipient not found: %s\n", recipient)
 		}
 	}
 

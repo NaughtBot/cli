@@ -1,6 +1,6 @@
 .PHONY: all build darwin linux clean install test lint format
 
-BINARY_NAME = liboobsign-sk
+BINARY_NAME = libnb-sk
 
 # Opt in to development-only attestation bypass support with `make DEV=1 ...`.
 # Default binaries keep attestation enforcement enabled.

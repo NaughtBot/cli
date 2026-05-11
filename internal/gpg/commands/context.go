@@ -217,7 +217,7 @@ func BuildGeneralContext(args *cli.Args, data []byte) *GeneralGPGContext {
 
 // reconstructCommandLine builds the command line from parsed args
 func reconstructCommandLine(args *cli.Args) string {
-	parts := []string{"oobsign", "gpg"}
+	parts := []string{"nb", "gpg"}
 
 	switch args.Mode {
 	case cli.ModeDetach:

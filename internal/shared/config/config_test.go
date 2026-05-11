@@ -501,7 +501,7 @@ func TestIsLabelUnique(t *testing.T) {
 	// Add some keys
 	cfg.AddKey(KeyMetadata{IOSKeyID: "ssh-1", Label: "mykey", Purpose: KeyPurposeSSH})
 	cfg.AddKey(KeyMetadata{IOSKeyID: "gpg-1", Label: "Test User <test@example.com>", Purpose: KeyPurposeGPG})
-	cfg.AddKey(KeyMetadata{IOSKeyID: "age-1", Label: "oobsign-age", Purpose: KeyPurposeAge})
+	cfg.AddKey(KeyMetadata{IOSKeyID: "age-1", Label: "nb-age", Purpose: KeyPurposeAge})
 
 	tests := []struct {
 		purpose    KeyPurpose
@@ -511,11 +511,11 @@ func TestIsLabelUnique(t *testing.T) {
 		// Existing labels should not be unique for their purpose
 		{KeyPurposeSSH, "mykey", false},
 		{KeyPurposeGPG, "Test User <test@example.com>", false},
-		{KeyPurposeAge, "oobsign-age", false},
+		{KeyPurposeAge, "nb-age", false},
 		// Same label but different purpose should be unique
 		{KeyPurposeGPG, "mykey", true},
 		{KeyPurposeAge, "mykey", true},
-		{KeyPurposeSSH, "oobsign-age", true},
+		{KeyPurposeSSH, "nb-age", true},
 		// New labels should be unique
 		{KeyPurposeSSH, "newkey", true},
 		{KeyPurposeGPG, "Another User <another@example.com>", true},

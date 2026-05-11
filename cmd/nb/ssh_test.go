@@ -70,5 +70,5 @@ func TestFindSKProviderPath(t *testing.T) {
 	}
 
 	// Path should contain the expected library name
-	assert.Contains(t, path, "liboobsign-sk")
+	assert.Contains(t, path, "libnb-sk")
 }

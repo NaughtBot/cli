@@ -150,7 +150,7 @@ func sign(sessionHandle C.CK_SESSION_HANDLE, data C.CK_BYTE_PTR, dataLen C.CK_UL
 		digest = dataBytes
 	}
 
-	// Perform the signing via OOBSign relay
+	// Perform the signing via NaughtBot relay
 	sig, err := performSigning(sess.cfg, sess.signCtx.key, digest, ckmToString(sess.signCtx.mechanism))
 	if err != nil {
 		logError("Signing failed: %v", err)

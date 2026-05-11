@@ -31,23 +31,23 @@
     </style>
 </head>
 <body>
-    <h1>OOBSign CLI Tools</h1>
-    <p>This installer will install the OOBSign command-line tools:</p>
+    <h1>NaughtBot CLI Tools</h1>
+    <p>This installer will install the NaughtBot command-line tools:</p>
 
     <ul>
-        <li><code>oobsign</code> - Main CLI for login, GPG signing, and more</li>
-        <li><code>liboobsign-sk.dylib</code> - SSH SecurityKeyProvider for hardware-backed SSH keys</li>
+        <li><code>nb</code> - Main CLI for login, GPG signing, and more</li>
+        <li><code>libnb-sk.dylib</code> - SSH SecurityKeyProvider for hardware-backed SSH keys</li>
     </ul>
 
     <h2>Installation Locations</h2>
     <ul>
-        <li><code>/usr/local/bin/oobsign</code></li>
-        <li><code>/usr/local/lib/liboobsign-sk.dylib</code></li>
+        <li><code>/usr/local/bin/nb</code></li>
+        <li><code>/usr/local/lib/libnb-sk.dylib</code></li>
     </ul>
 
     <h2>After Installation</h2>
-    <p>Run <code>oobsign login</code> to authenticate with your account.</p>
+    <p>Run <code>nb login</code> to authenticate with your account.</p>
     <p>For SSH support, add to <code>~/.ssh/config</code>:</p>
-    <code>SecurityKeyProvider /usr/local/lib/liboobsign-sk.dylib</code>
+    <code>SecurityKeyProvider /usr/local/lib/libnb-sk.dylib</code>
 </body>
 </html>

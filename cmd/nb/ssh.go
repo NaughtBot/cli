@@ -40,19 +40,19 @@ Operations:
 
 Example workflow:
   # Generate a new ECDSA P-256 SSH key (default, hardware-backed optional)
-  oobsign ssh --generate-key -n mykey -o ~/.ssh/id_oobsign
+  nb ssh --generate-key -n mykey -o ~/.ssh/id_nb
 
   # Generate an Ed25519 SSH key (software-only)
-  oobsign ssh --generate-key -n mykey-ed25519 -t ed25519 -o ~/.ssh/id_oobsign_ed25519
+  nb ssh --generate-key -n mykey-ed25519 -t ed25519 -o ~/.ssh/id_nb_ed25519
 
   # List enrolled keys
-  oobsign ssh --list-keys
+  nb ssh --list-keys
 
   # Export existing key to different path
-  oobsign ssh --key mykey -o ~/.ssh/id_oobsign_backup
+  nb ssh --key mykey -o ~/.ssh/id_nb_backup
 
   # Use the key with SSH
-  ssh -i ~/.ssh/id_oobsign user@host`,
+  ssh -i ~/.ssh/id_nb user@host`,
 	Run: runSSH,
 }
 
@@ -103,7 +103,7 @@ func runSSH(cmd *cobra.Command, args []string) {
 
 func runSSHGenerateKey(cfg *config.Config) {
 	if !cfg.IsLoggedIn() {
-		die("not logged in: run 'oobsign login' first")
+		die("not logged in: run 'nb login' first")
 	}
 
 	// Get key name
@@ -213,9 +213,9 @@ func runSSHGenerateKey(cfg *config.Config) {
 func findSKProviderPath() (path string, found bool) {
 	var libName string
 	if runtime.GOOS == "darwin" {
-		libName = "liboobsign-sk.dylib"
+		libName = "libnb-sk.dylib"
 	} else {
-		libName = "liboobsign-sk.so"
+		libName = "libnb-sk.so"
 	}
 
 	// Search known install locations in priority order.
@@ -241,7 +241,7 @@ func runSSHListKeys(cfg *config.Config) {
 	if len(sshKeys) == 0 {
 		fmt.Fprintf(os.Stderr, "No SSH keys enrolled.\n")
 		fmt.Fprintf(os.Stderr, "\nTo generate a new key:\n")
-		fmt.Fprintf(os.Stderr, "  oobsign ssh --generate-key -n <name> -o <path>\n")
+		fmt.Fprintf(os.Stderr, "  nb ssh --generate-key -n <name> -o <path>\n")
 		return
 	}
 
@@ -270,7 +270,7 @@ func runSSHListKeys(cfg *config.Config) {
 
 func runSSHExportKey(cfg *config.Config) {
 	if !cfg.IsLoggedIn() {
-		die("not logged in: run 'oobsign login' first")
+		die("not logged in: run 'nb login' first")
 	}
 
 	// Find key by name or fingerprint

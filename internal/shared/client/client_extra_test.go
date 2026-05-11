@@ -166,8 +166,8 @@ func TestUserAgent(t *testing.T) {
 	if ua == "" {
 		t.Error("userAgent() should not be empty")
 	}
-	if !containsAt(ua, "oobsign-cli/") {
-		t.Errorf("userAgent() = %q, want prefix oobsign-cli/", ua)
+	if !containsAt(ua, "nb/") {
+		t.Errorf("userAgent() = %q, want prefix nb/", ua)
 	}
 }
 

@@ -1,6 +1,6 @@
-# OOBSign PKCS#11 Provider
+# NaughtBot PKCS#11 Provider
 
-A PKCS#11 shared library that enables any PKCS#11-compatible application (OpenSSL, Firefox, etc.) to use OOBSign for hardware-backed P-256 ECDSA signing and ECDH key derivation via iOS Secure Enclave.
+A PKCS#11 shared library that enables any PKCS#11-compatible application (OpenSSL, Firefox, etc.) to use NaughtBot for hardware-backed P-256 ECDSA signing and ECDH key derivation via iOS Secure Enclave.
 
 ## Features
 
@@ -11,9 +11,9 @@ A PKCS#11 shared library that enables any PKCS#11-compatible application (OpenSS
 
 ## Prerequisites
 
-1. **OOBSign CLI**: Must be installed and configured
-2. **Logged in**: Run `oobsign login` to authenticate with your iOS device
-3. **Enrolled Keys**: At least one P-256 key must be enrolled via `oobsign login`
+1. **NaughtBot CLI**: Must be installed and configured
+2. **Logged in**: Run `nb login` to authenticate with your iOS device
+3. **Enrolled Keys**: At least one P-256 key must be enrolled via `nb login`
 
 ## Installation
 
@@ -30,7 +30,7 @@ make linux           # Build for Linux
 
 ```bash
 # Install to user directory (recommended)
-make install-user    # Installs to ~/.oobsign/lib/
+make install-user    # Installs to ~/.nb/lib/
 
 # Install system-wide (requires sudo)
 sudo make install    # Installs to /usr/local/lib/
@@ -41,18 +41,18 @@ sudo make install    # Installs to /usr/local/lib/
 ### Testing with pkcs11-tool
 
 ```bash
-# List slots (should show "OOBSign" token)
-pkcs11-tool --module ./liboobsign-pkcs11.dylib --list-slots
+# List slots (should show "NaughtBot" token)
+pkcs11-tool --module ./libnb-pkcs11.dylib --list-slots
 
 # List mechanisms
-pkcs11-tool --module ./liboobsign-pkcs11.dylib --list-mechanisms
+pkcs11-tool --module ./libnb-pkcs11.dylib --list-mechanisms
 
-# List keys (requires oobsign login first)
-pkcs11-tool --module ./liboobsign-pkcs11.dylib --list-objects --type privkey
+# List keys (requires nb login first)
+pkcs11-tool --module ./libnb-pkcs11.dylib --list-objects --type privkey
 
 # Sign a file with ECDSA-SHA256 (will prompt on iOS)
 echo "test data" > /tmp/testfile.txt
-pkcs11-tool --module ./liboobsign-pkcs11.dylib \
+pkcs11-tool --module ./libnb-pkcs11.dylib \
     --sign --mechanism ECDSA-SHA256 \
     --input-file /tmp/testfile.txt \
     --output-file /tmp/signature.bin
@@ -83,7 +83,7 @@ activate = 1
 
 [pkcs11_sect]
 module = /opt/homebrew/lib/ossl-modules/pkcs11.dylib
-pkcs11-module-path = ~/.oobsign/lib/liboobsign-pkcs11.dylib
+pkcs11-module-path = ~/.nb/lib/libnb-pkcs11.dylib
 activate = 1
 ```
 
@@ -91,7 +91,7 @@ Sign a file with OpenSSL:
 
 ```bash
 OPENSSL_CONF=~/.openssl-pkcs11.cnf openssl dgst -sha256 \
-    -sign "pkcs11:token=OOBSign;object=<key-label>" \
+    -sign "pkcs11:token=NaughtBot;object=<key-label>" \
     -out signature.bin file.txt
 ```
 
@@ -99,8 +99,8 @@ OPENSSL_CONF=~/.openssl-pkcs11.cnf openssl dgst -sha256 \
 
 1. Open Firefox Preferences
 2. Go to Privacy & Security → Certificates → Security Devices
-3. Click "Load" and browse to `liboobsign-pkcs11.dylib`
-4. Name it "OOBSign" and click OK
+3. Click "Load" and browse to `libnb-pkcs11.dylib`
+4. Name it "NaughtBot" and click OK
 5. Use the enrolled keys for client certificate authentication
 
 ## Supported PKCS#11 Functions
@@ -130,7 +130,7 @@ Enable debug logging by setting the environment variable:
 
 ```bash
 export OOBSIGN_LOG_LEVEL=debug
-pkcs11-tool --module ./liboobsign-pkcs11.dylib --list-slots
+pkcs11-tool --module ./libnb-pkcs11.dylib --list-slots
 ```
 
 Debug output is written to stderr.
@@ -139,10 +139,10 @@ Debug output is written to stderr.
 
 ### "Not logged in" error
 
-Run `oobsign login` to authenticate with your iOS device:
+Run `nb login` to authenticate with your iOS device:
 
 ```bash
-oobsign login
+nb login
 ```
 
 ### No keys found
@@ -150,7 +150,7 @@ oobsign login
 Ensure you have enrolled at least one key:
 
 ```bash
-oobsign keys
+nb keys
 ```
 
 If no keys are listed, the enrollment may have failed. Try logging in again.
@@ -163,27 +163,27 @@ The default timeout for iOS approval is 120 seconds. If you don't approve on iOS
 
 This usually means the configuration is not found or the user is not logged in. Check:
 
-1. `oobsign login --config` to see current configuration
+1. `nb login --config` to see current configuration
 2. Ensure the profile has valid authentication
 
 ## Limitations
 
-- **No key generation/import**: Keys must be enrolled via iOS app or `oobsign login`
+- **No key generation/import**: Keys must be enrolled via iOS app or `nb login`
 - **P-256 only**: Matches iOS Secure Enclave capabilities (no RSA, Ed25519)
 - **No direct encryption**: Use ECDH derivation for hybrid encryption schemes
 - **Blocking operations**: Operations wait up to 120s for iOS approval
-- **PIN ignored**: Authentication handled by prior `oobsign login` + iOS biometrics
+- **PIN ignored**: Authentication handled by prior `nb login` + iOS biometrics
 
 ## Architecture
 
 ```
-Application (OpenSSL) → liboobsign-pkcs11.dylib → Relay → iOS Secure Enclave
+Application (OpenSSL) → libnb-pkcs11.dylib → Relay → iOS Secure Enclave
 ```
 
 The PKCS#11 module:
 1. Receives signing/derivation requests from applications
 2. Collects metadata (application name, process chain, hostname)
 3. Encrypts the request for all enrolled iOS devices
-4. Sends to the OOBSign relay service
+4. Sends to the NaughtBot relay service
 5. Polls for response (iOS devices receive push notifications)
 6. Decrypts and returns the result (signature or shared secret)

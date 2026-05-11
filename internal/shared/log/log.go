@@ -1,7 +1,7 @@
-// Package log provides unified logging for the OOBSign CLI.
+// Package log provides unified logging for the NaughtBot CLI.
 //
 // Log levels can be configured via:
-//   - Environment variable: OOBSIGN_LOG_LEVEL=debug|info|warn|error
+//   - Environment variable: NB_LOG_LEVEL=debug|info|warn|error
 //   - CLI flag: --log-level=debug|info|warn|error
 //
 // Default level is info.
@@ -174,9 +174,9 @@ func IsDebug() bool {
 	return shouldLog(LevelDebug)
 }
 
-// InitFromEnv initializes the log level from the OOBSIGN_LOG_LEVEL environment variable.
+// InitFromEnv initializes the log level from the NB_LOG_LEVEL environment variable.
 func InitFromEnv() {
-	if level := os.Getenv("OOBSIGN_LOG_LEVEL"); level != "" {
+	if level := os.Getenv("NB_LOG_LEVEL"); level != "" {
 		SetLevelFromString(level)
 	}
 }

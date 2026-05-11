@@ -8,7 +8,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-// displayQRCode prints an ASCII QR code to the terminal with OOBSign branding in center.
+// displayQRCode prints an ASCII QR code to the terminal with NaughtBot branding in center.
 func displayQRCode(data string) {
 	// Use High error correction (30% recoverable) to allow center logo overlay
 	qr, err := qrcode.New(data, qrcode.High)
@@ -151,5 +151,5 @@ func printLoginSuccess(deviceCount, syncedKeys int) {
 	fmt.Println()
 	fmt.Println("You can now use:")
 	fmt.Println("  - SSH with SecurityKeyProvider")
-	fmt.Println("  - Git signing with 'oobsign gpg'")
+	fmt.Println("  - Git signing with 'nb gpg'")
 }

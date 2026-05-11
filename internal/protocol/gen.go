@@ -151,15 +151,20 @@ func (e AckAgentCommonSigningErrorCode) Valid() bool {
 }
 
 // Defines values for AckAgentCommonTransactionType.
+//
+// WS3.3: legacy envelope strings "custom" / "ecdh_derive" were renamed to
+// "pkcs11_sign" / "pkcs11_derive" to align with
+// github.com/naughtbot/e2ee-payloads/go MailboxEnvelopeType.Pkcs11Sign and
+// .Pkcs11Derive.
 const (
-	AckAgentCommonTransactionTypeAgeUnwrap  AckAgentCommonTransactionType = "age_unwrap"
-	AckAgentCommonTransactionTypeCustom     AckAgentCommonTransactionType = "custom"
-	AckAgentCommonTransactionTypeEcdhDerive AckAgentCommonTransactionType = "ecdh_derive"
-	AckAgentCommonTransactionTypeEnroll     AckAgentCommonTransactionType = "enroll"
-	AckAgentCommonTransactionTypeGpgDecrypt AckAgentCommonTransactionType = "gpg_decrypt"
-	AckAgentCommonTransactionTypeGpgSign    AckAgentCommonTransactionType = "gpg_sign"
-	AckAgentCommonTransactionTypeSshAuth    AckAgentCommonTransactionType = "ssh_auth"
-	AckAgentCommonTransactionTypeSshSign    AckAgentCommonTransactionType = "ssh_sign"
+	AckAgentCommonTransactionTypeAgeUnwrap    AckAgentCommonTransactionType = "age_unwrap"
+	AckAgentCommonTransactionTypeCustom       AckAgentCommonTransactionType = "pkcs11_sign"
+	AckAgentCommonTransactionTypeEcdhDerive   AckAgentCommonTransactionType = "pkcs11_derive"
+	AckAgentCommonTransactionTypeEnroll       AckAgentCommonTransactionType = "enroll"
+	AckAgentCommonTransactionTypeGpgDecrypt   AckAgentCommonTransactionType = "gpg_decrypt"
+	AckAgentCommonTransactionTypeGpgSign      AckAgentCommonTransactionType = "gpg_sign"
+	AckAgentCommonTransactionTypeSshAuth      AckAgentCommonTransactionType = "ssh_auth"
+	AckAgentCommonTransactionTypeSshSign      AckAgentCommonTransactionType = "ssh_sign"
 )
 
 // Valid indicates whether the value is a known member of the AckAgentCommonTransactionType enum.
@@ -203,7 +208,9 @@ func (e AgeUnwrapPayloadType) Valid() bool {
 
 // Defines values for CustomPayloadType.
 const (
-	Custom CustomPayloadType = "custom"
+	// WS3.3: renamed legacy envelope "custom" to "pkcs11_sign" to match the
+	// pinned github.com/naughtbot/e2ee-payloads/go MailboxEnvelopeType.Pkcs11Sign.
+	Custom CustomPayloadType = "pkcs11_sign"
 )
 
 // Valid indicates whether the value is a known member of the CustomPayloadType enum.
@@ -218,7 +225,9 @@ func (e CustomPayloadType) Valid() bool {
 
 // Defines values for EcdhDerivePayloadType.
 const (
-	EcdhDerive EcdhDerivePayloadType = "ecdh_derive"
+	// WS3.3: renamed legacy envelope "ecdh_derive" to "pkcs11_derive" to match
+	// the pinned github.com/naughtbot/e2ee-payloads/go MailboxEnvelopeType.Pkcs11Derive.
+	EcdhDerive EcdhDerivePayloadType = "pkcs11_derive"
 )
 
 // Valid indicates whether the value is a known member of the EcdhDerivePayloadType enum.

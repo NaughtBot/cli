@@ -15,7 +15,7 @@ import (
 func ExportKey(cfg *config.Config, args *cli.Args) {
 	key := FindKey(cfg, args.LocalUser, config.KeyPurposeGPG)
 	if key == nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: key not found: %s\n", args.LocalUser)
+		fmt.Fprintf(os.Stderr, "nb gpg: key not found: %s\n", args.LocalUser)
 		os.Exit(1)
 	}
 
@@ -50,7 +50,7 @@ func ExportKey(cfg *config.Config, args *cli.Args) {
 			packets = append(packets, key.UserIDSignature...)
 		}
 	} else if args.Verbose {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: note: key has no self-certification signature\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: note: key has no self-certification signature\n")
 		fmt.Fprintf(os.Stderr, "  GPG may reject this key with 'no valid user IDs'\n")
 		fmt.Fprintf(os.Stderr, "  Regenerate the key to create a properly signed export\n")
 	}
@@ -74,7 +74,7 @@ func ExportKey(cfg *config.Config, args *cli.Args) {
 				packets = append(packets, key.SubkeySignature...)
 			}
 		} else if args.Verbose {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: note: subkey has no binding signature\n")
+			fmt.Fprintf(os.Stderr, "nb gpg: note: subkey has no binding signature\n")
 			fmt.Fprintf(os.Stderr, "  Primary fingerprint: %s\n", GPGFingerprint(key))
 			fmt.Fprintf(os.Stderr, "  Subkey fingerprint:  %s\n", key.EncryptionFingerprint)
 		}

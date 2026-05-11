@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# OOBSign Linux Installer
+# NaughtBot Linux Installer
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -16,13 +16,13 @@ else
     LIB_DIR="${HOME}/.local/lib"
 fi
 
-echo "OOBSign Installer"
+echo "NaughtBot Installer"
 echo "=================="
 echo ""
 echo "Installing to:"
-echo "  Binary: ${BIN_DIR}/oobsign"
-echo "  Binary: ${BIN_DIR}/age-plugin-oobsign"
-echo "  Library: ${LIB_DIR}/liboobsign-sk.so"
+echo "  Binary: ${BIN_DIR}/nb"
+echo "  Binary: ${BIN_DIR}/age-plugin-nb"
+echo "  Library: ${LIB_DIR}/libnb-sk.so"
 echo ""
 
 # Create directories
@@ -30,14 +30,14 @@ mkdir -p "${BIN_DIR}"
 mkdir -p "${LIB_DIR}"
 
 # Install files
-cp "${SCRIPT_DIR}/oobsign" "${BIN_DIR}/oobsign"
-chmod 755 "${BIN_DIR}/oobsign"
+cp "${SCRIPT_DIR}/nb" "${BIN_DIR}/nb"
+chmod 755 "${BIN_DIR}/nb"
 
-cp "${SCRIPT_DIR}/age-plugin-oobsign" "${BIN_DIR}/age-plugin-oobsign"
-chmod 755 "${BIN_DIR}/age-plugin-oobsign"
+cp "${SCRIPT_DIR}/age-plugin-nb" "${BIN_DIR}/age-plugin-nb"
+chmod 755 "${BIN_DIR}/age-plugin-nb"
 
-cp "${SCRIPT_DIR}/liboobsign-sk.so" "${LIB_DIR}/liboobsign-sk.so"
-chmod 755 "${LIB_DIR}/liboobsign-sk.so"
+cp "${SCRIPT_DIR}/libnb-sk.so" "${LIB_DIR}/libnb-sk.so"
+chmod 755 "${LIB_DIR}/libnb-sk.so"
 
 echo "Installation complete!"
 echo ""
@@ -53,21 +53,21 @@ fi
 
 echo "Next steps:"
 echo ""
-echo "1. Login to OOBSign:"
-echo "   oobsign login"
+echo "1. Login to NaughtBot:"
+echo "   nb login"
 echo ""
 echo "2. For SSH SecurityKeyProvider, add to ~/.ssh/config:"
-echo "   SecurityKeyProvider ${LIB_DIR}/liboobsign-sk.so"
+echo "   SecurityKeyProvider ${LIB_DIR}/libnb-sk.so"
 echo ""
 echo "   Or set environment variable:"
-echo "   export SSH_SK_PROVIDER=${LIB_DIR}/liboobsign-sk.so"
+echo "   export SSH_SK_PROVIDER=${LIB_DIR}/libnb-sk.so"
 echo ""
 echo "3. For GPG signing, configure git:"
-echo "   git config --global gpg.program \"oobsign gpg\""
+echo "   git config --global gpg.program \"nb gpg\""
 echo ""
 echo "4. For age encryption/decryption:"
-echo "   oobsign age keygen"
-echo "   age -r \$(oobsign age recipient) -o secret.age file.txt"
-echo "   age -d -i <(oobsign age identity) secret.age"
+echo "   nb age keygen"
+echo "   age -r \$(nb age recipient) -o secret.age file.txt"
+echo "   age -d -i <(nb age identity) secret.age"
 echo ""
 echo "See README.txt for more details."

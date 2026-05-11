@@ -7,7 +7,7 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
-const keyringService = "com.oobsign.oobsign"
+const keyringService = "com.naughtbot.nb"
 
 // keyringKey generates a profile-namespaced keyring key
 func keyringKey(profileName, keyType, userID string) string {

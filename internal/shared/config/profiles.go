@@ -9,7 +9,7 @@ import (
 // Profile Management Methods
 
 // SetWorkingProfile sets the profile to use for operations (overrides active)
-// This is typically set via --profile flag or OOBSIGN_PROFILE env var
+// This is typically set via --profile flag or NB_PROFILE env var
 func (c *Config) SetWorkingProfile(name string) error {
 	if _, ok := c.Profiles[name]; !ok {
 		return fmt.Errorf("%w: %s", ErrProfileNotFound, name)

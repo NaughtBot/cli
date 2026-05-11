@@ -180,7 +180,7 @@ func (sm *sessionManager) openSession(slotID C.CK_SLOT_ID, flags C.CK_FLAGS) (C.
 
 	// Check if logged in
 	if !cfg.IsLoggedIn() {
-		logError("Not logged in - please run 'oobsign login' first")
+		logError("Not logged in - please run 'nb login' first")
 		return 0, C.CKR_TOKEN_NOT_PRESENT
 	}
 
@@ -383,7 +383,7 @@ func (s *session) getCKState() C.CK_STATE {
 	}
 }
 
-// login logs into the session (PIN is ignored, auth is via prior oobsign login)
+// login logs into the session (PIN is ignored, auth is via prior nb login)
 func (s *session) login() C.CK_RV {
 	if s.state != sessionPublic {
 		return C.CKR_USER_ALREADY_LOGGED_IN

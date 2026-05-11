@@ -4,8 +4,8 @@
 .PHONY: deb-amd64 deb-arm64 rpm-amd64 rpm-arm64
 .PHONY: packages-amd64 packages-arm64
 
-# Version from git tag (consolidated oobsign-cli/* tags for all platforms)
-VERSION := $(shell git describe --tags --match 'oobsign-cli/*' --always --dirty 2>/dev/null | sed 's|^oobsign-cli/||' || echo "0.0.1")
+# Version from git tag (consolidated nb-cli/* tags for all platforms)
+VERSION := $(shell git describe --tags --match 'nb-cli/*' --always --dirty 2>/dev/null | sed 's|^nb-cli/||' || echo "0.0.1")
 
 # RPM-safe version: fpm converts dashes to underscores in --version,
 # but NOT in --depends, so we must do it ourselves for consistency.
@@ -24,50 +24,50 @@ all: build-amd64 build-arm64
 build-amd64:
 	@echo "Building all components for linux/amd64..."
 	@mkdir -p $(BUILD_DIR)/amd64
-	# oobsign CLI
+	# nb CLI
 	cd $(CLI_DIR) && CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
-		-ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" \
-		-o packaging/linux/$(BUILD_DIR)/amd64/oobsign ./cmd/oobsign
-	# age-plugin-oobsign
+		-ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" \
+		-o packaging/linux/$(BUILD_DIR)/amd64/nb ./cmd/nb
+	# age-plugin-nb
 	cd $(CLI_DIR) && CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
-		-ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" \
-		-o packaging/linux/$(BUILD_DIR)/amd64/age-plugin-oobsign ./cmd/age-plugin-oobsign
+		-ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" \
+		-o packaging/linux/$(BUILD_DIR)/amd64/age-plugin-nb ./cmd/age-plugin-nb
 	# sk-provider
 	cd $(CLI_DIR)/sk-provider && CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
 		-buildmode=c-shared \
 		-ldflags="-s -w -X main.version=$(VERSION)" \
-		-o ../packaging/linux/$(BUILD_DIR)/amd64/liboobsign-sk.so .
-	@rm -f $(BUILD_DIR)/amd64/liboobsign-sk.h
+		-o ../packaging/linux/$(BUILD_DIR)/amd64/libnb-sk.so .
+	@rm -f $(BUILD_DIR)/amd64/libnb-sk.h
 	# pkcs11-provider
 	cd $(CLI_DIR)/pkcs11-provider && CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
 		-buildmode=c-shared \
 		-ldflags="-s -w -X main.version=$(VERSION)" \
-		-o ../packaging/linux/$(BUILD_DIR)/amd64/liboobsign-pkcs11.so .
-	@rm -f $(BUILD_DIR)/amd64/liboobsign-pkcs11.h
+		-o ../packaging/linux/$(BUILD_DIR)/amd64/libnb-pkcs11.so .
+	@rm -f $(BUILD_DIR)/amd64/libnb-pkcs11.h
 
 build-arm64:
 	@echo "Building all components for linux/arm64..."
 	@mkdir -p $(BUILD_DIR)/arm64
-	# oobsign CLI (requires cross-compiler for CGo/BBS+ FFI)
+	# nb CLI (requires cross-compiler for CGo/BBS+ FFI)
 	cd $(CLI_DIR) && CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build \
-		-ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" \
-		-o packaging/linux/$(BUILD_DIR)/arm64/oobsign ./cmd/oobsign
-	# age-plugin-oobsign (requires cross-compiler for CGo/BBS+ FFI)
+		-ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" \
+		-o packaging/linux/$(BUILD_DIR)/arm64/nb ./cmd/nb
+	# age-plugin-nb (requires cross-compiler for CGo/BBS+ FFI)
 	cd $(CLI_DIR) && CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build \
-		-ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" \
-		-o packaging/linux/$(BUILD_DIR)/arm64/age-plugin-oobsign ./cmd/age-plugin-oobsign
+		-ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" \
+		-o packaging/linux/$(BUILD_DIR)/arm64/age-plugin-nb ./cmd/age-plugin-nb
 	# sk-provider (requires cross-compiler)
 	cd $(CLI_DIR)/sk-provider && CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build \
 		-buildmode=c-shared \
 		-ldflags="-s -w -X main.version=$(VERSION)" \
-		-o ../packaging/linux/$(BUILD_DIR)/arm64/liboobsign-sk.so .
-	@rm -f $(BUILD_DIR)/arm64/liboobsign-sk.h
+		-o ../packaging/linux/$(BUILD_DIR)/arm64/libnb-sk.so .
+	@rm -f $(BUILD_DIR)/arm64/libnb-sk.h
 	# pkcs11-provider (requires cross-compiler)
 	cd $(CLI_DIR)/pkcs11-provider && CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build \
 		-buildmode=c-shared \
 		-ldflags="-s -w -X main.version=$(VERSION)" \
-		-o ../packaging/linux/$(BUILD_DIR)/arm64/liboobsign-pkcs11.so .
-	@rm -f $(BUILD_DIR)/arm64/liboobsign-pkcs11.h
+		-o ../packaging/linux/$(BUILD_DIR)/arm64/libnb-pkcs11.so .
+	@rm -f $(BUILD_DIR)/arm64/libnb-pkcs11.h
 
 # =============================================================================
 # Component Tarballs (for Homebrew Formula)
@@ -76,59 +76,59 @@ build-arm64:
 tarballs-amd64: build-amd64
 	@echo "Creating amd64 component tarballs..."
 	@mkdir -p $(BUILD_DIR)/tarballs
-	# oobsign tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-$(VERSION)-linux-amd64
-	cp $(BUILD_DIR)/amd64/oobsign $(BUILD_DIR)/oobsign-$(VERSION)-linux-amd64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-$(VERSION)-linux-amd64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-$(VERSION)-linux-amd64.tar.gz oobsign-$(VERSION)-linux-amd64
-	@rm -rf $(BUILD_DIR)/oobsign-$(VERSION)-linux-amd64
-	# oobsign-sk-provider tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-amd64
-	cp $(BUILD_DIR)/amd64/liboobsign-sk.so $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-amd64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-amd64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-sk-provider-$(VERSION)-linux-amd64.tar.gz oobsign-sk-provider-$(VERSION)-linux-amd64
-	@rm -rf $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-amd64
-	# oobsign-pkcs11 tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-amd64
-	cp $(BUILD_DIR)/amd64/liboobsign-pkcs11.so $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-amd64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-amd64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-pkcs11-$(VERSION)-linux-amd64.tar.gz oobsign-pkcs11-$(VERSION)-linux-amd64
-	@rm -rf $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-amd64
-	# oobsign-age-plugin tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64
-	cp $(BUILD_DIR)/amd64/age-plugin-oobsign $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-age-plugin-$(VERSION)-linux-amd64.tar.gz oobsign-age-plugin-$(VERSION)-linux-amd64
-	@rm -rf $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64
+	# nb tarball
+	@mkdir -p $(BUILD_DIR)/nb-$(VERSION)-linux-amd64
+	cp $(BUILD_DIR)/amd64/nb $(BUILD_DIR)/nb-$(VERSION)-linux-amd64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-$(VERSION)-linux-amd64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-$(VERSION)-linux-amd64.tar.gz nb-$(VERSION)-linux-amd64
+	@rm -rf $(BUILD_DIR)/nb-$(VERSION)-linux-amd64
+	# nb-sk-provider tarball
+	@mkdir -p $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-amd64
+	cp $(BUILD_DIR)/amd64/libnb-sk.so $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-amd64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-amd64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-sk-provider-$(VERSION)-linux-amd64.tar.gz nb-sk-provider-$(VERSION)-linux-amd64
+	@rm -rf $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-amd64
+	# nb-pkcs11 tarball
+	@mkdir -p $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-amd64
+	cp $(BUILD_DIR)/amd64/libnb-pkcs11.so $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-amd64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-amd64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-pkcs11-$(VERSION)-linux-amd64.tar.gz nb-pkcs11-$(VERSION)-linux-amd64
+	@rm -rf $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-amd64
+	# nb-age-plugin tarball
+	@mkdir -p $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64
+	cp $(BUILD_DIR)/amd64/age-plugin-nb $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-age-plugin-$(VERSION)-linux-amd64.tar.gz nb-age-plugin-$(VERSION)-linux-amd64
+	@rm -rf $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64
 	@echo "Created component tarballs in $(BUILD_DIR)/tarballs/"
 
 tarballs-arm64: build-arm64
 	@echo "Creating arm64 component tarballs..."
 	@mkdir -p $(BUILD_DIR)/tarballs
-	# oobsign tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-$(VERSION)-linux-arm64
-	cp $(BUILD_DIR)/arm64/oobsign $(BUILD_DIR)/oobsign-$(VERSION)-linux-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-$(VERSION)-linux-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-$(VERSION)-linux-arm64.tar.gz oobsign-$(VERSION)-linux-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-$(VERSION)-linux-arm64
-	# oobsign-sk-provider tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-arm64
-	cp $(BUILD_DIR)/arm64/liboobsign-sk.so $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-sk-provider-$(VERSION)-linux-arm64.tar.gz oobsign-sk-provider-$(VERSION)-linux-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-linux-arm64
-	# oobsign-pkcs11 tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-arm64
-	cp $(BUILD_DIR)/arm64/liboobsign-pkcs11.so $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-pkcs11-$(VERSION)-linux-arm64.tar.gz oobsign-pkcs11-$(VERSION)-linux-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-linux-arm64
-	# oobsign-age-plugin tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64
-	cp $(BUILD_DIR)/arm64/age-plugin-oobsign $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-age-plugin-$(VERSION)-linux-arm64.tar.gz oobsign-age-plugin-$(VERSION)-linux-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64
+	# nb tarball
+	@mkdir -p $(BUILD_DIR)/nb-$(VERSION)-linux-arm64
+	cp $(BUILD_DIR)/arm64/nb $(BUILD_DIR)/nb-$(VERSION)-linux-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-$(VERSION)-linux-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-$(VERSION)-linux-arm64.tar.gz nb-$(VERSION)-linux-arm64
+	@rm -rf $(BUILD_DIR)/nb-$(VERSION)-linux-arm64
+	# nb-sk-provider tarball
+	@mkdir -p $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-arm64
+	cp $(BUILD_DIR)/arm64/libnb-sk.so $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-sk-provider-$(VERSION)-linux-arm64.tar.gz nb-sk-provider-$(VERSION)-linux-arm64
+	@rm -rf $(BUILD_DIR)/nb-sk-provider-$(VERSION)-linux-arm64
+	# nb-pkcs11 tarball
+	@mkdir -p $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-arm64
+	cp $(BUILD_DIR)/arm64/libnb-pkcs11.so $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-pkcs11-$(VERSION)-linux-arm64.tar.gz nb-pkcs11-$(VERSION)-linux-arm64
+	@rm -rf $(BUILD_DIR)/nb-pkcs11-$(VERSION)-linux-arm64
+	# nb-age-plugin tarball
+	@mkdir -p $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64
+	cp $(BUILD_DIR)/arm64/age-plugin-nb $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-age-plugin-$(VERSION)-linux-arm64.tar.gz nb-age-plugin-$(VERSION)-linux-arm64
+	@rm -rf $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64
 	@echo "Created component tarballs in $(BUILD_DIR)/tarballs/"
 
 # =============================================================================
@@ -137,261 +137,261 @@ tarballs-arm64: build-arm64
 
 deb-amd64: build-amd64
 	@echo "Creating amd64 deb packages..."
-	# oobsign-cli (CLI binary)
+	# nb-cli (CLI binary)
 	fpm -s dir -t deb --architecture amd64 \
-		--name oobsign-cli \
+		--name nb-cli \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/oobsign/oobsign" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
 		--depends libc6 \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/oobsign=/usr/local/bin/oobsign
-	# oobsign-sk-provider
+		$(BUILD_DIR)/amd64/nb=/usr/local/bin/nb
+	# nb-sk-provider
 	fpm -s dir -t deb --architecture amd64 \
-		--name oobsign-sk-provider \
+		--name nb-sk-provider \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "SSH SecurityKey provider for OOBSign (software keys)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
-		--depends libc6 \
-		--after-install postinstall.sh \
-		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/liboobsign-sk.so=/usr/local/lib/liboobsign-sk.so
-	# oobsign-pkcs11
-	fpm -s dir -t deb --architecture amd64 \
-		--name oobsign-pkcs11 \
-		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "PKCS#11 provider for OOBSign (hardware keys)" \
-		--url "https://github.com/oobsign/oobsign" \
-		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
+		--depends "nb-cli = $(VERSION)" \
 		--depends libc6 \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/liboobsign-pkcs11.so=/usr/local/lib/liboobsign-pkcs11.so
-	# oobsign-age-plugin
+		$(BUILD_DIR)/amd64/libnb-sk.so=/usr/local/lib/libnb-sk.so
+	# nb-pkcs11
 	fpm -s dir -t deb --architecture amd64 \
-		--name oobsign-age-plugin \
+		--name nb-pkcs11 \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Age encryption plugin for OOBSign" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
+		--depends "nb-cli = $(VERSION)" \
+		--depends libc6 \
+		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/age-plugin-oobsign=/usr/local/bin/age-plugin-oobsign
-	# oobsign (meta-package)
+		$(BUILD_DIR)/amd64/libnb-pkcs11.so=/usr/local/lib/libnb-pkcs11.so
+	# nb-age-plugin
+	fpm -s dir -t deb --architecture amd64 \
+		--name nb-age-plugin \
+		--version $(VERSION) \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Age encryption plugin for NaughtBot" \
+		--url "https://github.com/nb/nb" \
+		--license "MIT" \
+		--depends "nb-cli = $(VERSION)" \
+		--package $(BUILD_DIR)/ \
+		$(BUILD_DIR)/amd64/age-plugin-nb=/usr/local/bin/age-plugin-nb
+	# nb (meta-package)
 	fpm -s empty -t deb --architecture amd64 \
-		--name oobsign \
+		--name nb \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Complete OOBSign CLI suite (meta-package)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Complete NaughtBot CLI suite (meta-package)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
-		--depends "oobsign-sk-provider = $(VERSION)" \
-		--depends "oobsign-pkcs11 = $(VERSION)" \
-		--depends "oobsign-age-plugin = $(VERSION)" \
+		--depends "nb-cli = $(VERSION)" \
+		--depends "nb-sk-provider = $(VERSION)" \
+		--depends "nb-pkcs11 = $(VERSION)" \
+		--depends "nb-age-plugin = $(VERSION)" \
 		--package $(BUILD_DIR)/
 	@echo "Created deb packages in $(BUILD_DIR)/"
 
 deb-arm64: build-arm64
 	@echo "Creating arm64 deb packages..."
-	# oobsign-cli (CLI binary)
+	# nb-cli (CLI binary)
 	fpm -s dir -t deb --architecture arm64 \
-		--name oobsign-cli \
+		--name nb-cli \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/oobsign/oobsign" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
 		--depends libc6 \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/oobsign=/usr/local/bin/oobsign
-	# oobsign-sk-provider
+		$(BUILD_DIR)/arm64/nb=/usr/local/bin/nb
+	# nb-sk-provider
 	fpm -s dir -t deb --architecture arm64 \
-		--name oobsign-sk-provider \
+		--name nb-sk-provider \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "SSH SecurityKey provider for OOBSign (software keys)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
-		--depends libc6 \
-		--after-install postinstall.sh \
-		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/liboobsign-sk.so=/usr/local/lib/liboobsign-sk.so
-	# oobsign-pkcs11
-	fpm -s dir -t deb --architecture arm64 \
-		--name oobsign-pkcs11 \
-		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "PKCS#11 provider for OOBSign (hardware keys)" \
-		--url "https://github.com/oobsign/oobsign" \
-		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
+		--depends "nb-cli = $(VERSION)" \
 		--depends libc6 \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/liboobsign-pkcs11.so=/usr/local/lib/liboobsign-pkcs11.so
-	# oobsign-age-plugin
+		$(BUILD_DIR)/arm64/libnb-sk.so=/usr/local/lib/libnb-sk.so
+	# nb-pkcs11
 	fpm -s dir -t deb --architecture arm64 \
-		--name oobsign-age-plugin \
+		--name nb-pkcs11 \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Age encryption plugin for OOBSign" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
+		--depends "nb-cli = $(VERSION)" \
+		--depends libc6 \
+		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/age-plugin-oobsign=/usr/local/bin/age-plugin-oobsign
-	# oobsign (meta-package)
+		$(BUILD_DIR)/arm64/libnb-pkcs11.so=/usr/local/lib/libnb-pkcs11.so
+	# nb-age-plugin
+	fpm -s dir -t deb --architecture arm64 \
+		--name nb-age-plugin \
+		--version $(VERSION) \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Age encryption plugin for NaughtBot" \
+		--url "https://github.com/nb/nb" \
+		--license "MIT" \
+		--depends "nb-cli = $(VERSION)" \
+		--package $(BUILD_DIR)/ \
+		$(BUILD_DIR)/arm64/age-plugin-nb=/usr/local/bin/age-plugin-nb
+	# nb (meta-package)
 	fpm -s empty -t deb --architecture arm64 \
-		--name oobsign \
+		--name nb \
 		--version $(VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Complete OOBSign CLI suite (meta-package)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Complete NaughtBot CLI suite (meta-package)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(VERSION)" \
-		--depends "oobsign-sk-provider = $(VERSION)" \
-		--depends "oobsign-pkcs11 = $(VERSION)" \
-		--depends "oobsign-age-plugin = $(VERSION)" \
+		--depends "nb-cli = $(VERSION)" \
+		--depends "nb-sk-provider = $(VERSION)" \
+		--depends "nb-pkcs11 = $(VERSION)" \
+		--depends "nb-age-plugin = $(VERSION)" \
 		--package $(BUILD_DIR)/
 	@echo "Created deb packages in $(BUILD_DIR)/"
 
 rpm-amd64: build-amd64
 	@echo "Creating x86_64 rpm packages..."
-	# oobsign-cli (CLI binary)
+	# nb-cli (CLI binary)
 	fpm -s dir -t rpm --architecture x86_64 \
-		--name oobsign-cli \
+		--name nb-cli \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/oobsign/oobsign" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
 		--depends glibc \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/oobsign=/usr/local/bin/oobsign
-	# oobsign-sk-provider
+		$(BUILD_DIR)/amd64/nb=/usr/local/bin/nb
+	# nb-sk-provider
 	fpm -s dir -t rpm --architecture x86_64 \
-		--name oobsign-sk-provider \
+		--name nb-sk-provider \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "SSH SecurityKey provider for OOBSign (software keys)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
-		--depends glibc \
-		--after-install postinstall.sh \
-		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/liboobsign-sk.so=/usr/local/lib/liboobsign-sk.so
-	# oobsign-pkcs11
-	fpm -s dir -t rpm --architecture x86_64 \
-		--name oobsign-pkcs11 \
-		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "PKCS#11 provider for OOBSign (hardware keys)" \
-		--url "https://github.com/oobsign/oobsign" \
-		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
+		--depends "nb-cli = $(RPM_VERSION)" \
 		--depends glibc \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/liboobsign-pkcs11.so=/usr/local/lib/liboobsign-pkcs11.so
-	# oobsign-age-plugin
+		$(BUILD_DIR)/amd64/libnb-sk.so=/usr/local/lib/libnb-sk.so
+	# nb-pkcs11
 	fpm -s dir -t rpm --architecture x86_64 \
-		--name oobsign-age-plugin \
+		--name nb-pkcs11 \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Age encryption plugin for OOBSign" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
+		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends glibc \
+		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/amd64/age-plugin-oobsign=/usr/local/bin/age-plugin-oobsign
-	# oobsign (meta-package)
+		$(BUILD_DIR)/amd64/libnb-pkcs11.so=/usr/local/lib/libnb-pkcs11.so
+	# nb-age-plugin
+	fpm -s dir -t rpm --architecture x86_64 \
+		--name nb-age-plugin \
+		--version $(RPM_VERSION) \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Age encryption plugin for NaughtBot" \
+		--url "https://github.com/nb/nb" \
+		--license "MIT" \
+		--depends "nb-cli = $(RPM_VERSION)" \
+		--package $(BUILD_DIR)/ \
+		$(BUILD_DIR)/amd64/age-plugin-nb=/usr/local/bin/age-plugin-nb
+	# nb (meta-package)
 	fpm -s empty -t rpm --architecture x86_64 \
-		--name oobsign \
+		--name nb \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Complete OOBSign CLI suite (meta-package)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Complete NaughtBot CLI suite (meta-package)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
-		--depends "oobsign-sk-provider = $(RPM_VERSION)" \
-		--depends "oobsign-pkcs11 = $(RPM_VERSION)" \
-		--depends "oobsign-age-plugin = $(RPM_VERSION)" \
+		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb-sk-provider = $(RPM_VERSION)" \
+		--depends "nb-pkcs11 = $(RPM_VERSION)" \
+		--depends "nb-age-plugin = $(RPM_VERSION)" \
 		--package $(BUILD_DIR)/
 	@echo "Created rpm packages in $(BUILD_DIR)/"
 
 rpm-arm64: build-arm64
 	@echo "Creating aarch64 rpm packages..."
-	# oobsign-cli (CLI binary)
+	# nb-cli (CLI binary)
 	fpm -s dir -t rpm --architecture aarch64 \
-		--name oobsign-cli \
+		--name nb-cli \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/oobsign/oobsign" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
 		--depends glibc \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/oobsign=/usr/local/bin/oobsign
-	# oobsign-sk-provider
+		$(BUILD_DIR)/arm64/nb=/usr/local/bin/nb
+	# nb-sk-provider
 	fpm -s dir -t rpm --architecture aarch64 \
-		--name oobsign-sk-provider \
+		--name nb-sk-provider \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "SSH SecurityKey provider for OOBSign (software keys)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
-		--depends glibc \
-		--after-install postinstall.sh \
-		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/liboobsign-sk.so=/usr/local/lib/liboobsign-sk.so
-	# oobsign-pkcs11
-	fpm -s dir -t rpm --architecture aarch64 \
-		--name oobsign-pkcs11 \
-		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "PKCS#11 provider for OOBSign (hardware keys)" \
-		--url "https://github.com/oobsign/oobsign" \
-		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
+		--depends "nb-cli = $(RPM_VERSION)" \
 		--depends glibc \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/liboobsign-pkcs11.so=/usr/local/lib/liboobsign-pkcs11.so
-	# oobsign-age-plugin
+		$(BUILD_DIR)/arm64/libnb-sk.so=/usr/local/lib/libnb-sk.so
+	# nb-pkcs11
 	fpm -s dir -t rpm --architecture aarch64 \
-		--name oobsign-age-plugin \
+		--name nb-pkcs11 \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Age encryption plugin for OOBSign" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
+		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends glibc \
+		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
-		$(BUILD_DIR)/arm64/age-plugin-oobsign=/usr/local/bin/age-plugin-oobsign
-	# oobsign (meta-package)
+		$(BUILD_DIR)/arm64/libnb-pkcs11.so=/usr/local/lib/libnb-pkcs11.so
+	# nb-age-plugin
+	fpm -s dir -t rpm --architecture aarch64 \
+		--name nb-age-plugin \
+		--version $(RPM_VERSION) \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Age encryption plugin for NaughtBot" \
+		--url "https://github.com/nb/nb" \
+		--license "MIT" \
+		--depends "nb-cli = $(RPM_VERSION)" \
+		--package $(BUILD_DIR)/ \
+		$(BUILD_DIR)/arm64/age-plugin-nb=/usr/local/bin/age-plugin-nb
+	# nb (meta-package)
 	fpm -s empty -t rpm --architecture aarch64 \
-		--name oobsign \
+		--name nb \
 		--version $(RPM_VERSION) \
-		--maintainer "OOBSign <hello@oobsign.com>" \
-		--description "Complete OOBSign CLI suite (meta-package)" \
-		--url "https://github.com/oobsign/oobsign" \
+		--maintainer "NaughtBot <hello@naughtbot.com>" \
+		--description "Complete NaughtBot CLI suite (meta-package)" \
+		--url "https://github.com/nb/nb" \
 		--license "MIT" \
-		--depends "oobsign-cli = $(RPM_VERSION)" \
-		--depends "oobsign-sk-provider = $(RPM_VERSION)" \
-		--depends "oobsign-pkcs11 = $(RPM_VERSION)" \
-		--depends "oobsign-age-plugin = $(RPM_VERSION)" \
+		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb-sk-provider = $(RPM_VERSION)" \
+		--depends "nb-pkcs11 = $(RPM_VERSION)" \
+		--depends "nb-age-plugin = $(RPM_VERSION)" \
 		--package $(BUILD_DIR)/
 	@echo "Created rpm packages in $(BUILD_DIR)/"
 
@@ -414,7 +414,7 @@ version:
 	@echo $(VERSION)
 
 help:
-	@echo "OOBSign CLI Linux Packaging"
+	@echo "NaughtBot CLI Linux Packaging"
 	@echo ""
 	@echo "Build Targets:"
 	@echo "  build-amd64        Build all components for x86_64"

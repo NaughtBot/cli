@@ -260,7 +260,7 @@ func TestFindKey_PurposeFilter_SkipsSSHKeys(t *testing.T) {
 				Keys: []config.KeyMetadata{
 					{
 						IOSKeyID:  "ssh-key",
-						Label:     "ackagent-prod",
+						Label:     "naughtbot-prod",
 						PublicKey: []byte("ssh-pubkey"),
 						Purpose:   config.KeyPurposeSSH,
 					},
@@ -284,8 +284,8 @@ func TestFindKey_PurposeFilter_SkipsSSHKeys(t *testing.T) {
 	if key == nil {
 		t.Fatal("Expected to find SSH key with SSH purpose")
 	}
-	if key.Label != "ackagent-prod" {
-		t.Errorf("Expected SSH key label 'ackagent-prod', got %q", key.Label)
+	if key.Label != "naughtbot-prod" {
+		t.Errorf("Expected SSH key label 'naughtbot-prod', got %q", key.Label)
 	}
 }
 
@@ -299,13 +299,13 @@ func TestFindKey_PurposeFilter_NoMatchingPurpose(t *testing.T) {
 				Keys: []config.KeyMetadata{
 					{
 						IOSKeyID:  "ssh-key",
-						Label:     "ackagent-prod",
+						Label:     "naughtbot-prod",
 						PublicKey: []byte("ssh-pubkey"),
 						Purpose:   config.KeyPurposeSSH,
 					},
 					{
 						IOSKeyID:  "age-key",
-						Label:     "oobsign-age",
+						Label:     "nb-age",
 						PublicKey: []byte("age-pubkey"),
 						Purpose:   config.KeyPurposeAge,
 					},
@@ -337,13 +337,13 @@ func newMixedKeyConfig() *config.Config {
 				Keys: []config.KeyMetadata{
 					{
 						IOSKeyID:  "ssh-key-1",
-						Label:     "ackagent-prod",
+						Label:     "naughtbot-prod",
 						PublicKey: []byte("ssh-pubkey"),
 						Purpose:   config.KeyPurposeSSH,
 					},
 					{
 						IOSKeyID:  "age-key-1",
-						Label:     "oobsign-age",
+						Label:     "nb-age",
 						PublicKey: []byte("age-pubkey"),
 						Purpose:   config.KeyPurposeAge,
 					},
@@ -361,8 +361,8 @@ func TestRegression_FindKeyDefaultSelectsGPGNotSSH(t *testing.T) {
 	if key == nil {
 		t.Fatal("Expected to find a GPG key")
 	}
-	if key.Label == "ackagent-prod" {
-		t.Fatal("REGRESSION: FindKey returned SSH key 'ackagent-prod' instead of GPG key")
+	if key.Label == "naughtbot-prod" {
+		t.Fatal("REGRESSION: FindKey returned SSH key 'naughtbot-prod' instead of GPG key")
 	}
 	if key.Label != "Tim <tim@gmail.com>" {
 		t.Errorf("Expected GPG key 'Tim <tim@gmail.com>', got %q", key.Label)
@@ -373,13 +373,13 @@ func TestRegression_FindKeyByLabelIgnoresWrongPurpose(t *testing.T) {
 	cfg := newMixedKeyConfig()
 
 	// Searching by SSH key label with GPG purpose should not find the SSH key
-	key := FindKey(cfg, "ackagent-prod", config.KeyPurposeGPG)
+	key := FindKey(cfg, "naughtbot-prod", config.KeyPurposeGPG)
 	if key != nil {
 		t.Fatal("REGRESSION: FindKey matched SSH key label when searching with GPG purpose")
 	}
 
 	// Searching by Age key label with GPG purpose should not find the Age key
-	key = FindKey(cfg, "oobsign-age", config.KeyPurposeGPG)
+	key = FindKey(cfg, "nb-age", config.KeyPurposeGPG)
 	if key != nil {
 		t.Fatal("REGRESSION: FindKey matched Age key label when searching with GPG purpose")
 	}
@@ -415,7 +415,7 @@ func TestRegression_ResolveRecipientsIgnoresSSHKeys(t *testing.T) {
 	}
 
 	// SSH key label should not resolve as a GPG recipient
-	result = resolveRecipients(cfg, []string{"ackagent-prod"})
+	result = resolveRecipients(cfg, []string{"naughtbot-prod"})
 	if len(result) != 0 {
 		t.Fatal("REGRESSION: resolveRecipients matched SSH key as GPG recipient")
 	}
@@ -472,9 +472,9 @@ func TestRegression_AllPurposesIndependent(t *testing.T) {
 		purpose       config.KeyPurpose
 		expectedLabel string
 	}{
-		{config.KeyPurposeSSH, "ackagent-prod"},
+		{config.KeyPurposeSSH, "naughtbot-prod"},
 		{config.KeyPurposeGPG, "Tim <tim@gmail.com>"},
-		{config.KeyPurposeAge, "oobsign-age"},
+		{config.KeyPurposeAge, "nb-age"},
 	}
 
 	for _, tc := range tests {

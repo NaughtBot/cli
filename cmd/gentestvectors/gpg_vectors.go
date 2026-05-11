@@ -21,7 +21,7 @@ func generateGPGVectors(privateKey *ecdsa.PrivateKey, keyCreationTime, sigTimest
 	pubKeyPacketBody := buildECDSAPublicKeyBody(pubKeyBytes, keyCreationTime)
 	pubKeyPacket := openpgp.BuildPublicKeyPacket(pubKeyBytes, keyCreationTime)
 
-	userID := "OOBSign Test Key <test@oobsign.com>"
+	userID := "NaughtBot Test Key <test@naughtbot.com>"
 	userIDPacket := openpgp.BuildUserIDPacket(userID)
 
 	selfSigPacket := buildSelfSignature(privateKey, pubKeyPacket, userIDPacket, keyCreationTime, fingerprint, keyID)
@@ -31,7 +31,7 @@ func generateGPGVectors(privateKey *ecdsa.PrivateKey, keyCreationTime, sigTimest
 	fullPubKeyBlock = append(fullPubKeyBlock, userIDPacket...)
 	fullPubKeyBlock = append(fullPubKeyBlock, selfSigPacket...)
 
-	message := []byte("Hello, OOBSign!")
+	message := []byte("Hello, NaughtBot!")
 	messageHex := hex.EncodeToString(message)
 
 	sb := openpgp.NewSignatureBuilder().

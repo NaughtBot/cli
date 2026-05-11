@@ -16,8 +16,8 @@ import (
 // the actual data being signed, preventing a malicious CLI from tricking users.
 func Sign(cfg *config.Config, args *cli.Args) {
 	if !cfg.IsLoggedIn() {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: not logged in\n")
-		fmt.Fprintf(os.Stderr, "Run 'oobsign login' to login first.\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: not logged in\n")
+		fmt.Fprintf(os.Stderr, "Run 'nb login' to login first.\n")
 		os.Exit(1)
 	}
 
@@ -25,11 +25,11 @@ func Sign(cfg *config.Config, args *cli.Args) {
 	if args.LocalUser == "" {
 		gpgKeys := cfg.KeysForPurpose(config.KeyPurposeGPG)
 		if len(gpgKeys) > 1 {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: multiple GPG keys enrolled, use -u to select:\n\n")
+			fmt.Fprintf(os.Stderr, "nb gpg: multiple GPG keys enrolled, use -u to select:\n\n")
 			for _, k := range gpgKeys {
 				fmt.Fprintf(os.Stderr, "  %s (%s)\n", GPGFingerprint(&k), k.Label)
 			}
-			fmt.Fprintf(os.Stderr, "\nExample: oobsign gpg -u %s ...\n", GPGFingerprint(&gpgKeys[0]))
+			fmt.Fprintf(os.Stderr, "\nExample: nb gpg -u %s ...\n", GPGFingerprint(&gpgKeys[0]))
 			os.Exit(1)
 		}
 	}
@@ -37,10 +37,10 @@ func Sign(cfg *config.Config, args *cli.Args) {
 	key := FindKey(cfg, args.LocalUser, config.KeyPurposeGPG)
 	if key == nil {
 		if args.LocalUser != "" {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: key not found: %s\n", args.LocalUser)
+			fmt.Fprintf(os.Stderr, "nb gpg: key not found: %s\n", args.LocalUser)
 		} else {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: no keys enrolled\n")
-			fmt.Fprintf(os.Stderr, "Enroll a key using the OOBSign iOS app first.\n")
+			fmt.Fprintf(os.Stderr, "nb gpg: no keys enrolled\n")
+			fmt.Fprintf(os.Stderr, "Enroll a key using the NaughtBot iOS app first.\n")
 		}
 		os.Exit(1)
 	}
@@ -51,13 +51,13 @@ func Sign(cfg *config.Config, args *cli.Args) {
 	if args.InputFile != "" && args.InputFile != "-" {
 		data, err = os.ReadFile(args.InputFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
 		data, err = io.ReadAll(os.Stdin)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 	}
@@ -75,7 +75,7 @@ func Sign(cfg *config.Config, args *cli.Args) {
 	// This ensures users see the actual data being signed, not just a hash
 	armoredSignature, err := RequestGPGSignature(cfg, key, data, actionCtx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: signing failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: signing failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -84,7 +84,7 @@ func Sign(cfg *config.Config, args *cli.Args) {
 	if args.OutputFile != "" && args.OutputFile != "-" {
 		f, err := os.Create(args.OutputFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 		defer f.Close()

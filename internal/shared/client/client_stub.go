@@ -37,10 +37,8 @@ var (
 )
 
 // userAgent returns the User-Agent string for HTTP requests.
-//
-// TODO(WS3.3): rename to `nb/` once the rebrand sweep lands.
 func userAgent() string {
-	return "oobsign-cli/" + version.Version
+	return "nb/" + version.Version
 }
 
 // Client handles communication with the backend service.

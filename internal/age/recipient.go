@@ -1,4 +1,4 @@
-// Package age implements age encryption plugin support for OOBSign.
+// Package age implements age encryption plugin support for NaughtBot.
 // It provides an age plugin that uses iOS-stored X25519 keys for decryption.
 package age
 
@@ -16,20 +16,20 @@ import (
 )
 
 const (
-	// StanzaType is the age stanza type for oobsign recipients
-	StanzaType = "oobsign"
+	// StanzaType is the age stanza type for nb recipients
+	StanzaType = "nb"
 
 	// RecipientPrefix is the HRP (human-readable part) for recipient encoding
-	RecipientPrefix = "age1oobsign"
+	RecipientPrefix = "age1nb"
 
 	// IdentityPrefix is the HRP for identity encoding
-	IdentityPrefix = "AGE-PLUGIN-OOBSIGN-"
+	IdentityPrefix = "AGE-PLUGIN-NB-"
 
 	// hkdfLabel is the HKDF info string used by age for X25519
 	hkdfLabel = "age-encryption.org/v1/X25519"
 )
 
-// Recipient implements age.Recipient for oobsign keys.
+// Recipient implements age.Recipient for nb keys.
 // It wraps file keys using X25519 ECDH with the recipient's public key.
 type Recipient struct {
 	// PublicKey is the X25519 public key (32 bytes)
@@ -39,10 +39,10 @@ type Recipient struct {
 // Ensure Recipient implements age.Recipient
 var _ age.Recipient = (*Recipient)(nil)
 
-// ParseRecipient parses a recipient string in the format "age1oobsign1..."
+// ParseRecipient parses a recipient string in the format "age1nb1..."
 func ParseRecipient(s string) (*Recipient, error) {
 	if !strings.HasPrefix(strings.ToLower(s), RecipientPrefix) {
-		return nil, fmt.Errorf("invalid oobsign recipient: must start with %s", RecipientPrefix)
+		return nil, fmt.Errorf("invalid nb recipient: must start with %s", RecipientPrefix)
 	}
 
 	// Decode bech32

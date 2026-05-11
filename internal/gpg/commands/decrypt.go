@@ -18,8 +18,8 @@ import (
 // iOS handles session key unwrapping via ECDH, CLI handles bulk decryption.
 func Decrypt(cfg *config.Config, args *cli.Args) {
 	if !cfg.IsLoggedIn() {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: not logged in\n")
-		fmt.Fprintf(os.Stderr, "Run 'oobsign login' to login first.\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: not logged in\n")
+		fmt.Fprintf(os.Stderr, "Run 'nb login' to login first.\n")
 		os.Exit(1)
 	}
 
@@ -29,13 +29,13 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	if args.InputFile != "" && args.InputFile != "-" {
 		data, err = os.ReadFile(args.InputFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
 		data, err = io.ReadAll(os.Stdin)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 	}
@@ -43,19 +43,19 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	// Dearmor if ASCII-armored
 	binaryData, armorType, err := openpgp.Dearmor(data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to dearmor: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to dearmor: %v\n", err)
 		os.Exit(1)
 	}
 
 	if armorType != "" && armorType != openpgp.ArmorMessage {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: expected PGP MESSAGE, got %s\n", armorType)
+		fmt.Fprintf(os.Stderr, "nb gpg: expected PGP MESSAGE, got %s\n", armorType)
 		os.Exit(1)
 	}
 
 	// Parse the encrypted message
 	msg, err := openpgp.ParseEncryptedMessage(binaryData)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to parse message: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to parse message: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -63,8 +63,8 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	// We check both primary fingerprints and encryption subkey fingerprints
 	keys := cfg.KeysForPurpose(config.KeyPurposeGPG)
 	if len(keys) == 0 {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: no keys enrolled\n")
-		fmt.Fprintf(os.Stderr, "Enroll a key using the OOBSign iOS app first.\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: no keys enrolled\n")
+		fmt.Fprintf(os.Stderr, "Enroll a key using the NaughtBot iOS app first.\n")
 		os.Exit(1)
 	}
 
@@ -103,7 +103,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	matchingPKESK, matchedFingerprint := msg.FindMatchingPKESK(fingerprints)
 	if matchingPKESK == nil {
 		// List the key IDs we tried
-		fmt.Fprintf(os.Stderr, "oobsign gpg: no matching key found for this message\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: no matching key found for this message\n")
 		fmt.Fprintf(os.Stderr, "Message was encrypted for key ID(s):\n")
 		for _, pkesk := range msg.PKESKPackets {
 			if pkesk.IsWildcardKeyID() {
@@ -142,7 +142,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	}
 
 	if matchedKey == nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: internal error: matched fingerprint but no key found\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: internal error: matched fingerprint but no key found\n")
 		os.Exit(1)
 	}
 
@@ -164,7 +164,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 
 	// Send request to iOS for session key unwrapping
 	if args.Verbose {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: requesting session key from iOS...\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: requesting session key from iOS...\n")
 		if matchedIsSubkey {
 			fmt.Fprintf(os.Stderr, "  Matched encryption subkey: %s\n", matchedKey.EncryptionFingerprint)
 		} else {
@@ -174,7 +174,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 
 	response, err := RequestGPGDecrypt(cfg, matchedKey, pkeskData, decryptCtx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: decryption failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: decryption failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -183,7 +183,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	symAlgo := response.GetAlgorithm()
 
 	if args.Verbose {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: received session key, decrypting locally...\n")
+		fmt.Fprintf(os.Stderr, "nb gpg: received session key, decrypting locally...\n")
 	}
 
 	var plaintext []byte
@@ -204,7 +204,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 
 		plaintext, err = gpgcrypto.DecryptSEIPDv1(sessionKey, seipd.Ciphertext, cipherAlgo)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: decryption failed: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: decryption failed: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -218,19 +218,19 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 			seipd.Ciphertext,
 		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: decryption failed: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: decryption failed: %v\n", err)
 			os.Exit(1)
 		}
 
 	default:
-		fmt.Fprintf(os.Stderr, "oobsign gpg: unsupported SEIPD version: %d\n", seipd.Version)
+		fmt.Fprintf(os.Stderr, "nb gpg: unsupported SEIPD version: %d\n", seipd.Version)
 		os.Exit(1)
 	}
 
 	// The plaintext should contain a literal data packet
 	literalData, err := extractLiteralData(plaintext)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -239,7 +239,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 	if args.OutputFile != "" && args.OutputFile != "-" {
 		f, err := os.Create(args.OutputFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "oobsign gpg: %v\n", err)
+			fmt.Fprintf(os.Stderr, "nb gpg: %v\n", err)
 			os.Exit(1)
 		}
 		defer f.Close()
@@ -248,7 +248,7 @@ func Decrypt(cfg *config.Config, args *cli.Args) {
 
 	_, err = output.Write(literalData)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "oobsign gpg: failed to write output: %v\n", err)
+		fmt.Fprintf(os.Stderr, "nb gpg: failed to write output: %v\n", err)
 		os.Exit(1)
 	}
 }

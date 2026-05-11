@@ -28,7 +28,7 @@ func TestBech32Encode(t *testing.T) {
 		},
 		{
 			name:    "32 byte X25519 key",
-			hrp:     "age1ackagent",
+			hrp:     "age1nb",
 			data:    bytes.Repeat([]byte{0xAB}, 32),
 			wantErr: false,
 		},
@@ -143,7 +143,7 @@ func TestBech32Roundtrip(t *testing.T) {
 		},
 		{
 			name: "32 byte X25519 public key",
-			hrp:  "age1ackagent",
+			hrp:  "age1nb",
 			data: bytes.Repeat([]byte{0xAB}, 32),
 		},
 		{

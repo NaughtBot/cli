@@ -1,6 +1,6 @@
 .PHONY: all build darwin linux clean install install-user test lint format
 
-BINARY_NAME = liboobsign-pkcs11
+BINARY_NAME = libnb-pkcs11
 
 # Opt in to development-only attestation bypass support with `make DEV=1 ...`.
 # Default binaries keep attestation enforcement enabled.
@@ -40,7 +40,7 @@ install: darwin
 	cp $(BINARY_NAME).dylib /usr/local/lib/$(BINARY_NAME).dylib
 
 install-user: darwin
-	mkdir -p ~/.oobsign/lib && cp $(BINARY_NAME).dylib ~/.oobsign/lib/
+	mkdir -p ~/.nb/lib && cp $(BINARY_NAME).dylib ~/.nb/lib/
 
 lint:
 	go vet ./...

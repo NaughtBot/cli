@@ -16,14 +16,14 @@ type Plugin struct {
 	cfg *config.Config
 }
 
-// NewPlugin creates a new oobsign age plugin
+// NewPlugin creates a new nb age plugin
 func NewPlugin() *Plugin {
 	return &Plugin{}
 }
 
 // Name returns the plugin name
 func (p *Plugin) Name() string {
-	return "oobsign"
+	return "nb"
 }
 
 // getConfig loads the config lazily
@@ -41,13 +41,13 @@ func (p *Plugin) getConfig() (*config.Config, error) {
 }
 
 // RecipientV1 returns a recipient for encryption.
-// Called when age encounters a recipient string starting with "age1ackagent".
+// Called when age encounters a recipient string starting with "age1nb".
 func (p *Plugin) RecipientV1(s string) (age.Recipient, error) {
 	return ParseRecipient(s)
 }
 
 // IdentityV1 returns an identity for decryption.
-// Called when age encounters an identity line starting with "AGE-PLUGIN-OOBSIGN-".
+// Called when age encounters an identity line starting with "AGE-PLUGIN-NB-".
 func (p *Plugin) IdentityV1(s string) (age.Identity, error) {
 	identity, err := ParseIdentity(s)
 	if err != nil {
@@ -61,7 +61,7 @@ func (p *Plugin) IdentityV1(s string) (age.Identity, error) {
 	}
 
 	if !cfg.IsLoggedIn() {
-		return nil, fmt.Errorf("not logged in: run 'oobsign login' first")
+		return nil, fmt.Errorf("not logged in: run 'nb login' first")
 	}
 
 	// Find the key by public key hex
@@ -137,9 +137,9 @@ func WriteIdentityFile(cfg *config.Config) (string, error) {
 	// Write identity file with all identities
 	var content string
 	if len(ageKeys) == 1 {
-		content = "# oobsign age identity\n# Created by: oobsign age identity\n"
+		content = "# nb age identity\n# Created by: nb age identity\n"
 	} else {
-		content = fmt.Sprintf("# oobsign age identities (%d keys)\n# Created by: oobsign age identity\n", len(ageKeys))
+		content = fmt.Sprintf("# nb age identities (%d keys)\n# Created by: nb age identity\n", len(ageKeys))
 	}
 
 	for _, key := range ageKeys {

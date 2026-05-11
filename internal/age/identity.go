@@ -9,7 +9,7 @@ import (
 	"github.com/naughtbot/cli/internal/shared/config"
 )
 
-// Identity implements age.Identity for oobsign keys.
+// Identity implements age.Identity for nb keys.
 // It delegates the ECDH operation to iOS for decryption.
 type Identity struct {
 	// PublicKeyHex is the hex-encoded public key used to look up the key in config
@@ -29,15 +29,15 @@ type Identity struct {
 // Ensure Identity implements age.Identity
 var _ age.Identity = (*Identity)(nil)
 
-// ParseIdentity parses an identity string in the format "AGE-PLUGIN-OOBSIGN-1..."
+// ParseIdentity parses an identity string in the format "AGE-PLUGIN-NB-1..."
 func ParseIdentity(s string) (*Identity, error) {
 	upper := strings.ToUpper(s)
 	if !strings.HasPrefix(upper, IdentityPrefix) {
-		return nil, fmt.Errorf("invalid ackagent identity: must start with %s", IdentityPrefix)
+		return nil, fmt.Errorf("invalid nb identity: must start with %s", IdentityPrefix)
 	}
 
 	// The identity contains a key public key hex reference
-	// Format: AGE-PLUGIN-OOBSIGN-1<bech32-encoded-publicKeyHex>
+	// Format: AGE-PLUGIN-NB-1<bech32-encoded-publicKeyHex>
 	encoded := strings.TrimPrefix(upper, IdentityPrefix)
 
 	// Decode bech32 (use lowercase for decoding)

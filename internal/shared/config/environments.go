@@ -1,4 +1,4 @@
-// Package config provides configuration management for the oobsign CLI.
+// Package config provides configuration management for the nb CLI.
 package config
 
 // Environment contains URLs for a deployment environment.
@@ -12,16 +12,16 @@ type Environment struct {
 var (
 	// Production is the production environment.
 	Production = Environment{
-		RelayURL:  "https://relay.oobsign.com",
-		IssuerURL: "https://login.oobsign.com",
-		BlobURL:   "https://blob.oobsign.com",
+		RelayURL:  "https://relay.naughtbot.com",
+		IssuerURL: "https://login.naughtbot.com",
+		BlobURL:   "https://blob.naughtbot.com",
 	}
 
 	// Sandbox is the sandbox environment.
 	Sandbox = Environment{
-		RelayURL:  "https://relay.sandbox.oobsign.com",
-		IssuerURL: "https://login.sandbox.oobsign.com",
-		BlobURL:   "https://blob.sandbox.oobsign.com",
+		RelayURL:  "https://relay.sandbox.naughtbot.com",
+		IssuerURL: "https://login.sandbox.naughtbot.com",
+		BlobURL:   "https://blob.sandbox.naughtbot.com",
 	}
 
 	// LocalDev is the local development environment.

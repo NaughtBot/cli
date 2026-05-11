@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
-    <title>OOBSign CLI Tools</title>
-    <organization>com.oobsign</organization>
+    <title>NaughtBot CLI Tools</title>
+    <organization>com.naughtbot</organization>
     <domains enable_localSystem="true"/>
     <options customize="never" require-scripts="true" rootVolumeOnly="true" hostArchitectures="arm64"/>
 
@@ -16,15 +16,15 @@
 
     <choices-outline>
         <line choice="default">
-            <line choice="com.oobsign.cli"/>
+            <line choice="com.naughtbot.cli"/>
         </line>
     </choices-outline>
 
     <choice id="default"/>
 
-    <choice id="com.oobsign.cli" visible="false">
-        <pkg-ref id="com.oobsign.cli"/>
+    <choice id="com.naughtbot.cli" visible="false">
+        <pkg-ref id="com.naughtbot.cli"/>
     </choice>
 
-    <pkg-ref id="com.oobsign.cli" version="0" onConclusion="none">oobsign-cli-component.pkg</pkg-ref>
+    <pkg-ref id="com.naughtbot.cli" version="0" onConclusion="none">nb-cli-component.pkg</pkg-ref>
 </installer-gui-script>

@@ -156,7 +156,7 @@ func deriveKey(
 		}
 	}
 
-	// Perform ECDH via OOBSign relay
+	// Perform ECDH via NaughtBot relay
 	sharedSecret, err := performECDH(sess.cfg, baseKey.metadata, theirPublicKey, kdfToString(params.kdf))
 	if err != nil {
 		logError("ECDH failed: %v", err)
