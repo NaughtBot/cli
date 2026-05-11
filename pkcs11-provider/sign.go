@@ -72,9 +72,17 @@ func signInit(sessionHandle C.CK_SESSION_HANDLE, mechanism C.CK_MECHANISM_PTR, k
 		return C.CKR_ARGUMENTS_BAD
 	}
 
-	// Validate mechanism
+	// Validate mechanism. The e2ee-payloads `pkcs11_sign` schema only
+	// expresses the hash-then-sign path, so we reject `CKM_ECDSA`
+	// (sign-pre-hashed-digest) at SignInit rather than letting callers
+	// initialise and then fail at C_Sign / C_SignFinal time. Callers
+	// should use `CKM_ECDSA_SHA256` (sign-after-hashing) instead.
 	mech := mechanism.mechanism
-	if mech != C.CKM_ECDSA && mech != C.CKM_ECDSA_SHA256 {
+	if mech == C.CKM_ECDSA {
+		logError("Unsupported mechanism CKM_ECDSA: the e2ee-payloads pkcs11_sign schema only supports CKM_ECDSA_SHA256 (sign-after-hashing); the approver hashes raw_data with SHA-256 itself")
+		return C.CKR_MECHANISM_INVALID
+	}
+	if mech != C.CKM_ECDSA_SHA256 {
 		logError("Unsupported mechanism: %s", ckmToString(mech))
 		return C.CKR_MECHANISM_INVALID
 	}
@@ -137,22 +145,9 @@ func sign(sessionHandle C.CK_SESSION_HANDLE, data C.CK_BYTE_PTR, dataLen C.CK_UL
 
 	// The e2ee-payloads `MailboxPkcs11SignRequestPayloadV1.raw_data` contract
 	// is "raw data to sign (preimage); approver computes SHA-256 and signs the
-	// resulting digest". So for CKM_ECDSA_SHA256 we send the preimage as-is.
-	// CKM_ECDSA callers pass a pre-computed 32-byte digest expecting the device
-	// to sign it directly, which the new schema cannot express (the approver
-	// would double-hash); reject those callers explicitly rather than silently
-	// producing an invalid signature.
-	var preimage []byte
-	switch sess.signCtx.mechanism {
-	case C.CKM_ECDSA_SHA256:
-		preimage = dataBytes
-	default: // C.CKM_ECDSA
-		logError("CKM_ECDSA (sign pre-hashed digest) is not supported by the e2ee-payloads pkcs11_sign schema; use CKM_ECDSA_SHA256 instead")
-		sess.signCtx = nil
-		return C.CKR_MECHANISM_INVALID
-	}
-
-	// Perform the signing via NaughtBot relay
+	// resulting digest", so we send the preimage as-is. CKM_ECDSA
+	// (sign-pre-hashed-digest) callers are already rejected at SignInit.
+	preimage := dataBytes
 	sig, err := performSigning(sess.cfg, sess.signCtx.key, preimage, ckmToString(sess.signCtx.mechanism))
 	if err != nil {
 		logError("Signing failed: %v", err)

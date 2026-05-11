@@ -79,6 +79,8 @@ func TestSignInitInvalidMechanism(t *testing.T) {
 }
 
 // TestSignInitInvalidKey verifies CKR_KEY_HANDLE_INVALID for bad key handle.
+// Uses CKM_ECDSA_SHA256 because CKM_ECDSA is now rejected at SignInit time
+// before key validation runs (see TestSignInitECDSAUnsupported).
 func TestSignInitInvalidKey(t *testing.T) {
 	bridgeResetGlobalState()
 	bridgeInitialize()
@@ -86,19 +88,39 @@ func TestSignInitInvalidKey(t *testing.T) {
 
 	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
 
-	rv := bridgeSignInit(handle, ckmECDSA, 999)
+	rv := bridgeSignInit(handle, ckmECDSASHA256, 999)
 	if rv != ckrKeyHandleInvalid {
 		t.Fatalf("signInit(invalid key) = %s, want CKR_KEY_HANDLE_INVALID", rvName(rv))
 	}
 }
 
-// TestSignInitSuccess verifies successful signInit for both ECDSA mechanisms.
+// TestSignInitECDSAUnsupported verifies CKM_ECDSA is rejected at SignInit.
+//
+// The new `MailboxPkcs11SignRequestPayloadV1` schema only models the
+// hash-then-sign path (CKM_ECDSA_SHA256), so accepting CKM_ECDSA at
+// SignInit and failing later at C_Sign / C_SignFinal would mislead
+// callers into thinking the operation was usable. Reject it up front
+// instead.
+func TestSignInitECDSAUnsupported(t *testing.T) {
+	bridgeResetGlobalState()
+	bridgeInitialize()
+	defer bridgeFinalize()
+
+	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
+
+	rv := bridgeSignInit(handle, ckmECDSA, 1)
+	if rv != ckrMechanismInvalid {
+		t.Fatalf("signInit(CKM_ECDSA) = %s, want CKR_MECHANISM_INVALID", rvName(rv))
+	}
+}
+
+// TestSignInitSuccess verifies successful signInit for the supported
+// ECDSA mechanism (`CKM_ECDSA_SHA256`).
 func TestSignInitSuccess(t *testing.T) {
 	mechanisms := []struct {
 		name string
 		mech uint64
 	}{
-		{"CKM_ECDSA", ckmECDSA},
 		{"CKM_ECDSA_SHA256", ckmECDSASHA256},
 	}
 
@@ -137,12 +159,12 @@ func TestSignInitDoubleInit(t *testing.T) {
 
 	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
 
-	rv := bridgeSignInit(handle, ckmECDSA, 1)
+	rv := bridgeSignInit(handle, ckmECDSASHA256, 1)
 	if rv != ckrOK {
 		t.Fatalf("first signInit() = %s, want CKR_OK", rvName(rv))
 	}
 
-	rv = bridgeSignInit(handle, ckmECDSA, 1)
+	rv = bridgeSignInit(handle, ckmECDSASHA256, 1)
 	if rv != ckrOperationActive {
 		t.Fatalf("second signInit() = %s, want CKR_OPERATION_ACTIVE", rvName(rv))
 	}
@@ -169,7 +191,7 @@ func TestSignNilSignatureLen(t *testing.T) {
 	defer bridgeFinalize()
 
 	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
-	bridgeSignInit(handle, ckmECDSA, 1)
+	bridgeSignInit(handle, ckmECDSASHA256, 1)
 
 	rv := bridgeSignNilSignatureLen(handle)
 	if rv != ckrArgumentsBad {
@@ -184,7 +206,7 @@ func TestSignSizeQuery(t *testing.T) {
 	defer bridgeFinalize()
 
 	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
-	bridgeSignInit(handle, ckmECDSA, 1)
+	bridgeSignInit(handle, ckmECDSASHA256, 1)
 
 	rv, sigLen := bridgeSignSizeQuery(handle)
 	if rv != ckrOK {
@@ -202,7 +224,7 @@ func TestSignBufferTooSmall(t *testing.T) {
 	defer bridgeFinalize()
 
 	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
-	bridgeSignInit(handle, ckmECDSA, 1)
+	bridgeSignInit(handle, ckmECDSASHA256, 1)
 
 	rv, sigLen := bridgeSignBufferTooSmall(handle)
 	if rv != ckrBufferTooSmall {
@@ -210,36 +232,6 @@ func TestSignBufferTooSmall(t *testing.T) {
 	}
 	if sigLen != uint64(p256SignatureLen) {
 		t.Errorf("sigLen after buffer too small = %d, want %d", sigLen, p256SignatureLen)
-	}
-}
-
-// TestSignECDSAUnsupported verifies that CKM_ECDSA is rejected at sign time.
-//
-// The new `MailboxPkcs11SignRequestPayloadV1` schema only models the
-// hash-then-sign path (CKM_ECDSA_SHA256). The previous behavior where the
-// caller could pass a pre-computed 32-byte digest and have it signed
-// directly is no longer expressible: the approver hashes `raw_data`
-// internally, so re-hashing a digest would produce SHA-256 of SHA-256 and
-// the signature would not verify. We therefore reject CKM_ECDSA at sign
-// time rather than silently producing an unverifiable signature; callers
-// should switch to CKM_ECDSA_SHA256 (sign-after-hashing).
-func TestSignECDSAUnsupported(t *testing.T) {
-	bridgeResetGlobalState()
-	bridgeInitialize()
-	defer bridgeFinalize()
-
-	handle := testRegisterSession(ckfSerialSession, createTestKeysForSign())
-	bridgeSignInit(handle, ckmECDSA, 1)
-
-	badData := make([]byte, 16)
-	rv := bridgeSignBadDataLen(handle, badData)
-	if rv != ckrMechanismInvalid {
-		t.Fatalf("sign(CKM_ECDSA) = %s, want CKR_MECHANISM_INVALID", rvName(rv))
-	}
-
-	sess := bridgeGetSession(handle)
-	if !bridgeIsSignCtxNil(sess) {
-		t.Error("signCtx should be nil after CKR_MECHANISM_INVALID error")
 	}
 }
 

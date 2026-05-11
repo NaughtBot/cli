@@ -33,15 +33,22 @@ func signingError(errCode *int, errMsg, noun string) error {
 }
 
 // SigningResponse is a flat helper view over the discriminated
-// MailboxSshSignResponsePayloadV1 / MailboxPkcs11SignResponsePayloadV1 unions
-// that the CLI consumes from approver-decrypted plaintext.
+// MailboxSshSignResponsePayloadV1 / MailboxSshAuthResponsePayloadV1 /
+// MailboxPkcs11SignResponsePayloadV1 unions in `github.com/naughtbot/e2ee-payloads/go`.
 //
-// The success branch populates Signature; the failure branch populates
-// ErrorCode + ErrorMessage. This single-struct shape keeps call-site logic
-// (transport.RequestBuilder + sk-provider / pkcs11-provider sign paths) the
-// same as it was against the legacy single-shape SignatureResponse, while
-// the JSON tags match the new e2ee-payloads snake_case wire format so this
-// helper can be JSON-unmarshalled from raw response bytes directly.
+// The generated union types wrap an unexported `union json.RawMessage` so they
+// cannot be JSON-unmarshalled in one shot from the approver-decrypted
+// plaintext — callers would otherwise have to peek at the wire bytes, pick a
+// branch, and re-unmarshal. This flat helper preserves the snake_case wire
+// field names (`signature`, `error_code`, `error_message`) exactly as the
+// generated success / failure branches emit them and turns the union routing
+// into a single struct + IsSuccess/Error methods.
+//
+// This is NOT a parallel schema definition — the JSON tags trace 1:1 to the
+// generated `MailboxSshSignResponseSuccessV1.Signature` /
+// `MailboxSshSignResponseFailureV1.{ErrorCode, ErrorMessage}` fields. The
+// helper goes away once a future e2ee-payloads release exposes top-level
+// `As<Branch>` methods that can decode directly from the raw response bytes.
 type SigningResponse struct {
 	Signature    *[]byte `json:"signature,omitempty"`
 	ErrorCode    *int    `json:"error_code,omitempty"`
