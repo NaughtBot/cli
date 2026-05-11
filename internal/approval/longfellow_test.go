@@ -64,6 +64,34 @@ func TestLongfellowProofVerifier_RejectsAudienceMismatch(t *testing.T) {
 	}
 }
 
+// TestLongfellowProofVerifier_HonorsCanceledContext is a regression guard for
+// the WS3.2 vendoring change that started checking ctx.Err() before invoking
+// the (uncancellable) cgo Longfellow verifier. Server-side approval paths
+// that pass an already-canceled context should refuse the expensive proof
+// check rather than burning CPU on an abandoned request.
+func TestLongfellowProofVerifier_HonorsCanceledContext(t *testing.T) {
+	fixture := makeLongfellowProofFixture(t)
+
+	verifier, err := NewLongfellowProofVerifier(fixture.config)
+	if err != nil {
+		t.Fatalf("NewLongfellowProofVerifier: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err = verifier.VerifyApprovalProof(ctx, ApprovalProofVerificationRequest{
+		Challenge: fixture.challenge,
+		Proof:     fixture.proof,
+	})
+	if err == nil {
+		t.Fatal("expected canceled-context error")
+	}
+	if !contains(err.Error(), "canceled") {
+		t.Fatalf("error %q does not mention cancellation", err.Error())
+	}
+}
+
 // TestLongfellowProofVerifier_AcceptsUppercaseHexFields is a regression guard
 // for commit 93a129af ("fix(approval): compare statement hex fields
 // case-insensitively"). Pre-fix, validateStatement compared AudienceHashHex,
@@ -789,16 +817,19 @@ func TestNewLongfellowProofVerifier_RejectsConfigErrors(t *testing.T) {
 			errSubstr: "circuit ID mismatch",
 		},
 		{
-			// Regression for ClarifiedLabs/ackagent-monorepo#336: pinning a
-			// CircuitIDHex without shipping the matching blob must fail fast
-			// rather than silently falling back to an expensive
-			// GenerateCircuit() at startup.
-			name: "pinned_circuit_id_without_circuit_blob",
+			// When the caller pins a CircuitIDHex but does not ship the
+			// matching circuit blob, the constructor must rebuild the blob
+			// via GenerateCircuit() and then surface the pin mismatch from
+			// the post-condition rather than silently accepting the wrong
+			// circuit. (Regression for the prod/sandbox path: persisted
+			// ApprovalProofVerifierConfig carries CircuitIDHex but not the
+			// 2 MB+ circuit blob, so the verifier must rebuild it.)
+			name: "pinned_circuit_id_without_circuit_blob_mismatches",
 			mutate: func(c *LongfellowVerifierConfig) {
 				c.Circuit = nil
 				c.CircuitIDHex = strings.Repeat("ab", 32)
 			},
-			errSubstr: "circuit blob is required when CircuitIDHex is pinned",
+			errSubstr: "circuit ID mismatch",
 		},
 	}
 

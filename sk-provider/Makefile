@@ -7,7 +7,7 @@ BINARY_NAME = liboobsign-sk
 DEV ?= 0
 GO_LDFLAGS =
 ifeq ($(DEV),1)
-GO_LDFLAGS += -X github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/transport.AllowSkipAttestation=true
+GO_LDFLAGS += -X github.com/naughtbot/cli/internal/shared/transport.AllowSkipAttestation=true
 endif
 
 all: darwin

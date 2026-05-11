@@ -103,10 +103,14 @@ func NewLongfellowProofVerifier(config LongfellowVerifierConfig) (ApprovalProofV
 	}
 
 	circuit := append([]byte(nil), config.Circuit...)
-	if len(circuit) == 0 && strings.TrimSpace(config.CircuitIDHex) != "" {
-		return nil, fmt.Errorf("longfellow circuit blob is required when CircuitIDHex is pinned")
-	}
 	if len(circuit) == 0 {
+		// No circuit bytes were supplied. Generate them locally; if the
+		// caller also pinned a CircuitIDHex, the post-condition below
+		// rejects the verifier when the regenerated circuit's ID does not
+		// match the pin. This is the normal prod/sandbox path: the cached
+		// ApprovalProofVerifierConfig persists CircuitIDHex but not the
+		// 2 MB+ circuit blob, so the verifier rebuilds the bytes and
+		// validates them against the pin.
 		generated, err := attestedkeyzk.GenerateCircuit()
 		if err != nil {
 			return nil, fmt.Errorf("generate longfellow circuit: %w", err)
@@ -144,7 +148,7 @@ func NewLongfellowProofVerifier(config LongfellowVerifierConfig) (ApprovalProofV
 	}, nil
 }
 
-func (v *longfellowProofVerifier) VerifyApprovalProof(_ context.Context, req ApprovalProofVerificationRequest) (ApprovalProofVerificationResult, error) {
+func (v *longfellowProofVerifier) VerifyApprovalProof(ctx context.Context, req ApprovalProofVerificationRequest) (ApprovalProofVerificationResult, error) {
 	if err := req.Challenge.validate(); err != nil {
 		return ApprovalProofVerificationResult{}, err
 	}
@@ -175,6 +179,15 @@ func (v *longfellowProofVerifier) VerifyApprovalProof(_ context.Context, req App
 	}
 	if len(proofBytes) == 0 {
 		return ApprovalProofVerificationResult{}, fmt.Errorf("approval proof bytes are required")
+	}
+
+	// Honor cancellation before kicking off the expensive Longfellow verify.
+	// The underlying cgo call is not cancellable, so we cannot cancel mid-flight;
+	// the next-best contract is to refuse to start when the caller's context is
+	// already done so server-side approval paths don't burn CPU on requests
+	// the caller has already abandoned.
+	if err := ctx.Err(); err != nil {
+		return ApprovalProofVerificationResult{}, fmt.Errorf("approval proof verification canceled: %w", err)
 	}
 
 	if err := attestedkeyzk.Verify(v.circuit, statement, proofBytes); err != nil {
