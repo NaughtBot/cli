@@ -163,6 +163,22 @@ func (b *RequestBuilder) WithTimestamp(ts int64) *RequestBuilder {
 	return b
 }
 
+// WithSkipApprovalProofVerifier disables fetching the
+// `/approval-proofs/config` document and the BBS+/Longfellow proof
+// verifier load entirely for this Send. Enrollment flows MUST use this:
+// they intentionally consume the response via DecryptWithoutAttestation
+// (key-level attestation is bound into the approved-enroll payload), and
+// the approval-proofs config endpoint is itself stubbed during the
+// mailbox-DPoP rewire window, so leaving the fetch on would block every
+// enrollment.
+func (b *RequestBuilder) WithSkipApprovalProofVerifier() *RequestBuilder {
+	if b.err != nil {
+		return b
+	}
+	b.skipAttestationVerify = true
+	return b
+}
+
 // WithClientRequestID overrides the UUID used as clientRequestId / AAD
 // for this Send. Callers that embed the request ID inside the payload
 // body (e.g., SSH enroll) should generate a UUID, stamp it into the

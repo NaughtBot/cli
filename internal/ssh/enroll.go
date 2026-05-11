@@ -165,6 +165,7 @@ func EnrollSSHKey(cfg *config.Config, label string, algorithm string) (*config.K
 	fmt.Fprintf(os.Stderr, "Approve key generation on iOS device...\n")
 
 	result, err := transport.NewRequestBuilder(cfg).
+		WithSkipApprovalProofVerifier().
 		WithTimeout(config.DefaultSigningTimeout).
 		WithExpiration(int(config.DefaultSigningTimeout.Seconds())).
 		Send(ctx, json.RawMessage(payloadBytes))

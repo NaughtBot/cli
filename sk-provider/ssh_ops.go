@@ -106,8 +106,9 @@ func executeEnroll(alg uint32, challengeBytes []byte, app string, flags uint8) (
 
 	// Enrollment relies on key-level attestation (the Attestation field
 	// on the approved-enroll response), not BBS+ anonymous attestation,
-	// so we use DecryptWithoutAttestation via RequestResult.
+	// so we skip the proof-verifier load and use DecryptWithoutAttestation.
 	result, err := transport.NewRequestBuilder(cfg).
+		WithSkipApprovalProofVerifier().
 		WithClientRequestID(requestID).
 		WithTimeout(config.DefaultSSHTimeout).
 		WithExpiration(300).

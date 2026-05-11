@@ -11,9 +11,14 @@ import (
 )
 
 // SendAndDecryptEnrollment sends an enrollment request and decrypts the response.
-// Enrollment flows skip BBS+ attestation verification by design.
+// Enrollment flows skip BBS+ attestation verification by design — they rely on
+// the key-level attestation in MailboxEnrollResponseApprovedV1.Attestation, not
+// the per-request Longfellow approval proof — and so MUST NOT block on the
+// `/approval-proofs/config` fetch (which is stubbed during the
+// mailbox-DPoP rewire window).
 func SendAndDecryptEnrollment(ctx context.Context, cfg *config.Config, payload any, timeout time.Duration) ([]byte, error) {
 	result, err := NewRequestBuilder(cfg).
+		WithSkipApprovalProofVerifier().
 		WithTimeout(timeout).
 		WithExpiration(int(timeout.Seconds())).
 		WithTimestamp(time.Now().UnixMilli()).
