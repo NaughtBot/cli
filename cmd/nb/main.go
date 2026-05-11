@@ -17,9 +17,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/version"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/version"
 )
 
 // Global flags accessible to all subcommands via persistent flags

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/cli"
+	"github.com/naughtbot/cli/internal/gpg/cli"
 )
 
 func TestParseGitCommitObject_ValidCommit(t *testing.T) {

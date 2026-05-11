@@ -42,8 +42,8 @@ import (
 	"encoding/hex"
 	"sync"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // sessionState represents the state of a PKCS#11 session

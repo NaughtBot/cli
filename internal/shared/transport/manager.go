@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/log"
 )
 
 var tlog = log.New("transport")

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 func TestSyncResult_DeviceCount_Zero(t *testing.T) {

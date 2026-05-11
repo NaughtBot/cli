@@ -4,7 +4,7 @@ import "os"
 
 // AllowSkipAttestation is set to "true" only in development builds via ldflags:
 //
-//	-X github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/transport.AllowSkipAttestation=true
+//	-X github.com/naughtbot/cli/internal/shared/transport.AllowSkipAttestation=true
 var AllowSkipAttestation = "false"
 
 // SkipAttestationRequested returns true only if both the build allows skipping

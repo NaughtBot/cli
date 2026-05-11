@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	sharedtestdata "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/testdata"
+	sharedtestdata "github.com/naughtbot/cli/internal/shared/testdata"
 )
 
 // SSHTestVectors matches the ssh_vectors structure in data/crypto_test_vectors.json

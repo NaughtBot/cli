@@ -1,7 +1,7 @@
 package age
 
 import (
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // Re-export config types for plugin binary

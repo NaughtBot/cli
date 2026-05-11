@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/cli"
-	gpgcrypto "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/gpg/cli"
+	gpgcrypto "github.com/naughtbot/cli/internal/gpg/crypto"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
+	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // Decrypt decrypts an OpenPGP-encrypted message.

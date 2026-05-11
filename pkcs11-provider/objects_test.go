@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // createTestKeys creates a set of test key objects for use in object tests.

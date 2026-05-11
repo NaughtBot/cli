@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
-	sharedtestdata "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/testdata"
+	protocol "github.com/naughtbot/cli/internal/protocol"
+	sharedtestdata "github.com/naughtbot/cli/internal/shared/testdata"
 )
 
 // ProtocolTestVectors matches the structure of data/protocol_test_vectors.json

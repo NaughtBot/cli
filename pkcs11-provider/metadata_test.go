@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sysinfo"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/sysinfo"
 )
 
 func TestGetApplicationName_EmptyChain(t *testing.T) {

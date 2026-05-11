@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package main
 
 import (
@@ -5,11 +7,11 @@ import (
 	"errors"
 	"testing"
 
-	authapi "github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go/auth"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	sharedsync "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sync"
+	authapi "github.com/naughtbot/api/auth"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
+	sharedsync "github.com/naughtbot/cli/internal/shared/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -238,11 +240,5 @@ func TestSyncSigningKeys_PassesAttestationOptions(t *testing.T) {
 	assert.True(t, gotOpts.AcceptSoftwareApproverKeys)
 }
 
-func configTestDir(t *testing.T) func() {
-	t.Helper()
-	tmpDir := t.TempDir()
-	config.SetConfigDir(tmpDir)
-	return func() {
-		config.ResetConfigDir()
-	}
-}
+// configTestDir moved to testhelpers_test.go so it's available in default
+// builds; this file is gated behind `legacy_api`.

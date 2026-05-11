@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package transport
 
 import (
@@ -12,10 +14,10 @@ import (
 	"sync"
 	"testing"
 
-	authapi "github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go/auth"
-	"github.com/clarifiedlabs/ackagent-monorepo/ackagent-sdk/go/approval"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	authapi "github.com/naughtbot/api/auth"
 	"github.com/google/uuid"
+	"github.com/naughtbot/cli/internal/approval"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 type issuerURLVariant struct {

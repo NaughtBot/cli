@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
 )
 
 // ─── EncryptSEIPDv1 / DecryptSEIPDv1 ──────────────────────────────────────────

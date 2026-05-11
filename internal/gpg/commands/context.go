@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/cli"
+	"github.com/naughtbot/cli/internal/gpg/cli"
 )
 
 const (

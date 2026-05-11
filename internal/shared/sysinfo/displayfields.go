@@ -1,7 +1,7 @@
 package sysinfo
 
 import (
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 // ToSourceInfo converts ProcessInfo into a protocol.SourceInfo struct

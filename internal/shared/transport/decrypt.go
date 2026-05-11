@@ -3,7 +3,7 @@ package transport
 import (
 	"fmt"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
+	"github.com/naughtbot/cli/crypto"
 )
 
 // DecryptResponse decrypts an E2E encrypted response from the signer.

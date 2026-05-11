@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // NewManagerWithConfig creates a transport manager with the relay transport configured.

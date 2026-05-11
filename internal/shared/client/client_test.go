@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package client
 
 import (
@@ -8,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	authapi "github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go/auth"
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	authapi "github.com/naughtbot/api/auth"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 func TestNewClient_InvalidURL(t *testing.T) {
@@ -181,16 +183,5 @@ func TestGetApprovalProofConfig(t *testing.T) {
 	}
 }
 
-// contains checks if s contains substr (avoids importing strings for a single test helper).
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsAt(s, substr))
-}
-
-func containsAt(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
+// contains, containsAt helpers moved to helpers_test.go so they remain available
+// in default builds while the rest of this file is gated behind `legacy_api`.

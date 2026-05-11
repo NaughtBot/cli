@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 func TestFindKey_NoKeys(t *testing.T) {

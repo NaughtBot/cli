@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // createTestKeysForDerive creates key objects suitable for derive tests.

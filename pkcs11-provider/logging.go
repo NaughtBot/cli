@@ -84,7 +84,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/log"
 )
 
 var pkcs11Log = log.New("pkcs11")

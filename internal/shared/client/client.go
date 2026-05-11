@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 // Package client provides HTTP communication with the backend service.
 package client
 
@@ -10,10 +12,10 @@ import (
 	"net/url"
 	"time"
 
-	authapi "github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go/auth"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/version"
-	exchangesapi "github.com/clarifiedlabs/ackagent-monorepo/relay-api/go/relay"
+	authapi "github.com/naughtbot/api/auth"
+	"github.com/naughtbot/cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/version"
+	exchangesapi "github.com/naughtbot/api/mailbox"
 )
 
 var httpLog = log.New("http")

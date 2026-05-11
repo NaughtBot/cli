@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sysinfo"
+	"github.com/naughtbot/cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/sysinfo"
 )
 
 // ProcessInfo extends sysinfo.ProcessInfo with SSH-specific fields.

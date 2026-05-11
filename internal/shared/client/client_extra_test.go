@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
+	protocol "github.com/naughtbot/cli/internal/protocol"
 )
 
 func TestNewClient_ValidURL(t *testing.T) {

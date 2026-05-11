@@ -10,7 +10,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"golang.org/x/oauth2"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/version"
+	"github.com/naughtbot/cli/internal/shared/version"
 )
 
 // userAgentTransport wraps an http.RoundTripper to add User-Agent header.

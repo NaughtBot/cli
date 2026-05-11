@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/cli"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/gpg/cli"
+	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/stretchr/testify/assert"
 )
 

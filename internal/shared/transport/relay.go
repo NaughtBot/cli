@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package transport
 
 import (
@@ -12,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/multidevice"
-	exchangesapi "github.com/clarifiedlabs/ackagent-monorepo/relay-api/go/relay"
+	exchangesapi "github.com/naughtbot/api/mailbox"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/multidevice"
 )
 
 // longPollTimeoutSeconds is the per-request long-poll window for exchange

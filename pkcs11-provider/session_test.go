@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // TestSessionNotInitialized verifies operations fail when not initialized.

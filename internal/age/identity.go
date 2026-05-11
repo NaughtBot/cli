@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"filippo.io/age"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // Identity implements age.Identity for oobsign keys.

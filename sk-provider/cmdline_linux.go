@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sysinfo"
+	"github.com/naughtbot/cli/internal/shared/sysinfo"
 )
 
 // getProcessInfo walks the process tree to find the actual SSH command.

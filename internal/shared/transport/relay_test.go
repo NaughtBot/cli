@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package transport
 
 import (
@@ -9,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/client"
 )
 
 func TestRelayTransportSend_ReturnsExpiredStatus(t *testing.T) {

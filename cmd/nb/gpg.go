@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	gpgcli "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/cli"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/commands"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/version"
+	gpgcli "github.com/naughtbot/cli/internal/gpg/cli"
+	"github.com/naughtbot/cli/internal/gpg/commands"
+	"github.com/naughtbot/cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/version"
 )
 
 var gpgLog = log.New("gpg")

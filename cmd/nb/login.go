@@ -1,3 +1,5 @@
+//go:build legacy_api
+
 package main
 
 import (
@@ -14,14 +16,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	authapi "github.com/clarifiedlabs/ackagent-monorepo/ackagent-api/go/auth"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/ptr"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/display"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/log"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/sysinfo"
+	authapi "github.com/naughtbot/api/auth"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/ptr"
+	"github.com/naughtbot/cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/display"
+	"github.com/naughtbot/cli/internal/shared/log"
+	"github.com/naughtbot/cli/internal/shared/sysinfo"
 )
 
 var (
@@ -535,16 +537,8 @@ func loginWithQRCode(cfg *config.Config, authClient *client.Client, issuerURL st
 	printLoginSuccess(validDeviceCount, syncedKeys)
 }
 
-func clearActiveProfileLoginState(cfg *config.Config) error {
-	profile, err := cfg.GetActiveProfile()
-	if err != nil {
-		return err
-	}
-
-	profile.ClearUserAccount()
-	profile.Keys = nil
-	return nil
-}
+// clearActiveProfileLoginState moved to login_state.go (ungated) so its
+// regression coverage can run in default builds.
 
 func cacheApprovalProofConfigForProfile(
 	ctx context.Context,
@@ -608,16 +602,4 @@ func verifiedRequesterID(status *authapi.GetRequesterSessionStatusResponse) (str
 	return requesterID, nil
 }
 
-func validatedApproverDeviceCount(cfg *config.Config) (int, error) {
-	account := cfg.UserAccount()
-	if account == nil {
-		return 0, errors.New("login failed: no user account state was created")
-	}
-
-	deviceCount := len(account.Devices)
-	if deviceCount == 0 {
-		return 0, errors.New("login failed: no approver devices passed attestation verification")
-	}
-
-	return deviceCount, nil
-}
+// validatedApproverDeviceCount moved to login_state.go (ungated).

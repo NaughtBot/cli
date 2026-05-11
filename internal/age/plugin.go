@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"filippo.io/age"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // Plugin implements the age plugin interface.

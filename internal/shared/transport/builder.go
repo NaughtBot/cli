@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/ackagent-sdk/go/approval"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/client"
+	"github.com/naughtbot/cli/internal/approval"
+	"github.com/naughtbot/cli/internal/shared/client"
 	"github.com/google/uuid"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/crypto"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/multidevice"
+	"github.com/naughtbot/cli/crypto"
+	"github.com/naughtbot/cli/internal/shared/config"
+	"github.com/naughtbot/cli/internal/shared/multidevice"
 )
 
 // ErrNoApproverKeys is returned when the account has no active approver

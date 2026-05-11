@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/gpg/openpgp"
+	"github.com/naughtbot/cli/internal/gpg/openpgp"
 )
 
 func generateGPGVectors(privateKey *ecdsa.PrivateKey, keyCreationTime, sigTimestamp time.Time) GPGVectors {

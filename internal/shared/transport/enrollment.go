@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	protocol "github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/protocol"
-	"github.com/clarifiedlabs/ackagent-monorepo/oobsign-cli/internal/shared/config"
+	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/config"
 )
 
 // SendAndDecryptEnrollment sends an enrollment request and decrypts the response.
