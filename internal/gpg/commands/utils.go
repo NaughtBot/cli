@@ -161,12 +161,13 @@ func RequestGPGSignature(cfg *config.Config, key *config.KeyMetadata, rawData []
 	}
 
 	// The mailbox/poll path strips the signing public key from the envelope, so
-	// the hex-encoded device key id is embedded in the encrypted payload so
-	// the approver can resolve which on-device GPG primary key to use for
-	// signing. The new schema uses DeviceKeyId (non-pointer, required) for
-	// this; iOS / Android / etc. all consume the same field name.
+	// the on-device key handle (IOSKeyID, populated from
+	// MailboxEnrollResponseApprovedV1.DeviceKeyId during enrollment) is
+	// embedded in the encrypted payload so the approver can resolve which
+	// on-device GPG primary key to use for signing. iOS / Android / etc. all
+	// consume the same field name.
 	payload := payloads.MailboxGpgSignRequestPayloadV1{
-		DeviceKeyId: key.Hex(),
+		DeviceKeyId: key.IOSKeyID,
 		Display:     display,
 		RawData:     rawData,
 		SourceInfo:  processInfo.ToSourceInfo(),
@@ -244,7 +245,8 @@ func RequestGPGDecrypt(cfg *config.Config, key *config.KeyMetadata, pkesk *paylo
 	}
 
 	// PKESK-based decryption: the approver unwraps the session key from the
-	// PKESK packet using the on-device ECDH subkey selected by DeviceKeyId.
+	// PKESK packet using the on-device ECDH subkey selected by DeviceKeyId
+	// (the enrollment-time `device_key_id` stored in IOSKeyID).
 	// EncryptedData is required by the schema but unused on this path, so
 	// pass an empty byte slice.
 	var pkeskVal payloads.PkeskData
@@ -252,7 +254,7 @@ func RequestGPGDecrypt(cfg *config.Config, key *config.KeyMetadata, pkesk *paylo
 		pkeskVal = *pkesk
 	}
 	payload := payloads.MailboxGpgDecryptRequestPayloadV1{
-		DeviceKeyId:   key.Hex(),
+		DeviceKeyId:   key.IOSKeyID,
 		Display:       display,
 		EncryptedData: []byte{},
 		Pkesk:         pkeskVal,

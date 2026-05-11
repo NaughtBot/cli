@@ -308,6 +308,14 @@ func executeSign(alg uint32, dataBytes []byte, app string, keyHandleBytes []byte
 	logDebug("executeSign: signed successfully ios_key_id=%s request_id=%s sig_len=%d",
 		keyHandleData.IOSKeyID, requestID.String(), len(signature))
 
-	// The new e2ee-payloads schema does not carry a counter field; emit 0.
+	// The new e2ee-payloads `MailboxSshAuthResponseSuccessV1` schema does
+	// not carry the SSH-SK monotonic counter. The approver signs
+	// `SHA256(application) || flags || counter || SHA256(data)`, so the CLI
+	// has to relay whatever counter value the approver used so OpenSSH can
+	// rebuild the same preimage during verification. Returning 0 here will
+	// cause OpenSSH verification to fail unless the approver also signs with
+	// counter 0 (which gives up SSH-SK clone-detection). Adding a counter
+	// field to the SSH response payloads is upstream e2ee-payloads work
+	// tracked outside NaughtBot/cli#12.
 	return &signResult{signature: signature, counter: 0}, 0
 }

@@ -207,9 +207,12 @@ func performSigning(cfg *config.Config, key *config.KeyMetadata, preimage []byte
 	defer cancel()
 
 	// Build display + payload using generated e2ee-payloads types.
+	// DeviceKeyId is the on-device key handle returned during enrollment
+	// (stored as IOSKeyID); key.Hex() is the public-key bytes used for
+	// CKA_ID and display fields only.
 	display, sourceInfo := collectSigningDisplay(key, mechanism, len(preimage))
 	payload := &payloads.MailboxPkcs11SignRequestPayloadV1{
-		DeviceKeyId: key.Hex(),
+		DeviceKeyId: key.IOSKeyID,
 		Display:     display,
 		RawData:     preimage,
 		SourceInfo:  sourceInfo,

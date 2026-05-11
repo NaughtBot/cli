@@ -197,8 +197,11 @@ func performECDH(cfg *config.Config, key *config.KeyMetadata, theirPublicKey []b
 
 	display, sourceInfo := collectDeriveDisplay(key, "CKM_ECDH1_DERIVE", kdf)
 	kdfParams := &payloads.Pkcs11DeriveKdfParams{Algorithm: kdf}
+	// DeviceKeyId is the on-device key handle returned at enrollment time
+	// (stored as IOSKeyID); key.Hex() is the public-key bytes used by
+	// PKCS#11 CKA_ID matching and by display fields.
 	payload := &payloads.MailboxPkcs11DeriveRequestPayloadV1{
-		DeviceKeyId:   key.Hex(),
+		DeviceKeyId:   key.IOSKeyID,
 		Display:       display,
 		PeerPublicHex: hex.EncodeToString(theirPublicKey),
 		Kdf:           kdfParams,

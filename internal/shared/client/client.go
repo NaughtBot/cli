@@ -73,8 +73,15 @@ func (c *Client) SetAccessToken(token string) { c.accessToken = token }
 
 // ApprovalProofIssuerKey carries the public-key entry for a single issuer used
 // by the approval-proof verifier. The wire shape mirrors the legacy
-// /approval-proofs/config response so dependents that hand this through the
-// approval verifier do not need to change.
+// /approval-proofs/config response.
+//
+// TODO(WS3.x): there is no matching schema in the current
+// `github.com/naughtbot/api/auth` generated client (the
+// `/approval-proofs/config` endpoint has not yet been added upstream). When
+// that endpoint is published, alias this type to the generated equivalent
+// per the AGENTS.md rule against hand-written schema mirrors and delete this
+// local copy. Until then, this is the contract dependent transport / approval
+// code expects, so changes must mirror the OpenAPI schema once it lands.
 type ApprovalProofIssuerKey struct {
 	KeyId            string `json:"key_id"`
 	PublicKeyHex     string `json:"public_key_hex"`
@@ -84,6 +91,10 @@ type ApprovalProofIssuerKey struct {
 
 // ApprovalProofConfigResponse carries the approval-proof verifier configuration
 // used by the transport request builder.
+//
+// TODO(WS3.x): same note as ApprovalProofIssuerKey — replace with the
+// generated type from `github.com/naughtbot/api/auth` once the upstream
+// `/approval-proofs/config` schema lands.
 type ApprovalProofConfigResponse struct {
 	ActiveKeyId                string                   `json:"active_key_id"`
 	AllowedAppIdHashesHex      *[]string                `json:"allowed_app_id_hashes_hex,omitempty"`
