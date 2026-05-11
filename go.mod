@@ -6,10 +6,8 @@ require (
 	filippo.io/age v1.3.0
 	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/google/uuid v1.6.0
-	github.com/naughtbot/api v0.19.0
 	github.com/naughtbot/attested-key-zk/bindings/go v0.2.2
 	github.com/naughtbot/e2ee-payloads/go v0.1.0
-	github.com/oapi-codegen/runtime v1.4.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
@@ -35,6 +33,7 @@ require (
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/muhlemmer/gu v0.3.1 // indirect
+	github.com/oapi-codegen/runtime v1.4.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect

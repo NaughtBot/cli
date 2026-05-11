@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/naughtbot/cli/crypto"
-	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/client"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/transport"
 	"github.com/naughtbot/cli/internal/shared/util"
 	"github.com/google/uuid"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 const (
@@ -54,17 +55,18 @@ func executeEnroll(alg uint32, challengeBytes []byte, app string, flags uint8) (
 	logDebug("executeEnroll: config loaded active_profile=%s devices=%d",
 		cfg.ActiveProfile, len(cfg.UserAccount().Devices))
 
-	// Pre-generate request ID so it can be embedded in the payload (SSH
-	// enroll includes RequestID inside the protocol body) and passed
-	// through to the transport as clientRequestId/AAD.
+	// Pre-generate request ID so it can be passed through to the transport
+	// as clientRequestId/AAD.
 	requestID := uuid.New()
 	processInfo := getProcessInfo()
 
+	algorithm := config.AlgorithmP256
 	algDisplayName := "ECDSA P-256"
 	if alg == sshAlgEd25519 {
+		algorithm = config.AlgorithmEd25519
 		algDisplayName = "Ed25519"
 	}
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Algorithm", Value: algDisplayName},
 		{Label: "Application", Value: app, Monospace: util.Ptr(true)},
 	}
@@ -72,31 +74,27 @@ func executeEnroll(alg uint32, challengeBytes []byte, app string, flags uint8) (
 	icon := "key.fill"
 	historyTitle := "SSH Key Enrolled"
 	subtitle := "SSH key enrollment"
-	req := EnrollRequest{
-		RequestID:   requestID.String(),
-		Type:        protocol.Enroll,
-		Purpose:     protocol.Ssh,
-		Algorithm:   int(alg),
-		Challenge:   challengeBytes,
-		Application: app,
-		Flags:       flags,
-		Timestamp:   time.Now().Unix(),
-		Display: &protocol.GenericDisplaySchema{
+	label := app
+	req := payloads.MailboxEnrollRequestPayloadV1{
+		Purpose:    payloads.Ssh,
+		Label:      &label,
+		Algorithm:  &algorithm,
+		SourceInfo: processInfo.ToSourceInfo(),
+		Display: &payloads.DisplaySchema{
 			Title:        "Enroll SSH Key?",
 			HistoryTitle: &historyTitle,
 			Subtitle:     &subtitle,
 			Icon:         &icon,
 			Fields:       fields,
 		},
-		SourceInfo: processInfo.ToSourceInfo(),
 	}
 
 	ctx := context.Background()
 	logDebug("sending enrollment request to backend")
 
 	// Enrollment relies on key-level attestation (the Attestation field
-	// in EnrollResponse), not BBS+ anonymous attestation, so we use
-	// DecryptWithoutAttestation via RequestResult.
+	// on the approved-enroll response), not BBS+ anonymous attestation,
+	// so we use DecryptWithoutAttestation via RequestResult.
 	result, err := transport.NewRequestBuilder(cfg).
 		WithClientRequestID(requestID).
 		WithTimeout(config.DefaultSSHTimeout).
@@ -122,27 +120,22 @@ func executeEnroll(alg uint32, challengeBytes []byte, app string, flags uint8) (
 		return nil, sshErrGeneral
 	}
 
-	var enrollResp protocol.EnrollResponse
-	if err := json.Unmarshal(decrypted, &enrollResp); err != nil {
-		logError("failed to parse response: %v", err)
+	enrollResp, err := transport.ParseEnrollResponse(decrypted)
+	if err != nil {
+		logError("enrollment response: %v", err)
 		return nil, sshErrGeneral
 	}
 
-	if enrollResp.Status != protocol.EnrollResponseStatusApproved {
-		logError("enrollment rejected")
-		return nil, sshErrGeneral
-	}
-	if enrollResp.IosKeyId == nil {
+	iosKeyID := enrollResp.DeviceKeyId
+	if iosKeyID == "" {
 		logError("missing iOS key ID in response")
 		return nil, sshErrGeneral
 	}
-	if enrollResp.PublicKeyHex == nil {
+	if enrollResp.PublicKeyHex == "" {
 		logError("missing public key in response")
 		return nil, sshErrGeneral
 	}
-
-	iosKeyID := *enrollResp.IosKeyId
-	publicKey, err := hex.DecodeString(*enrollResp.PublicKeyHex)
+	publicKey, err := hex.DecodeString(enrollResp.PublicKeyHex)
 	if err != nil {
 		logError("invalid hex public key: %v", err)
 		return nil, sshErrGeneral
@@ -152,16 +145,11 @@ func executeEnroll(alg uint32, challengeBytes []byte, app string, flags uint8) (
 
 	keyHandle := buildKeyHandle(iosKeyID, cfg.UserAccount().UserID, app)
 
-	algName := config.AlgorithmP256
-	if alg == sshAlgEd25519 {
-		algName = config.AlgorithmEd25519
-	}
-
 	cfg.AddKey(config.KeyMetadata{
 		IOSKeyID:  iosKeyID,
 		Label:     app,
 		PublicKey: publicKey,
-		Algorithm: algName,
+		Algorithm: algorithm,
 		Purpose:   config.KeyPurposeSSH,
 		CreatedAt: time.Now(),
 	})
@@ -237,35 +225,42 @@ func executeSign(alg uint32, dataBytes []byte, app string, keyHandleBytes []byte
 		return nil, sshErrDeviceNotFound
 	}
 
-	// Pre-generate request ID so the payload's embedded RequestID matches
-	// the wire-level clientRequestId used as AEAD associated data.
+	// Pre-generate request ID so the payload's wire-level clientRequestId
+	// stays in sync with the AEAD associated data.
 	requestID := uuid.New()
 	processInfo := getProcessInfo()
 	logDebug("ssh command: %s", processInfo.Command)
 	logDebug("process chain: %v", processInfo.ProcessChain)
 
-	fields := []protocol.DisplayField{
+	// Look up the signing key for the device key id in the handle.
+	signingPublicKey := ""
+	for _, k := range cfg.KeysForPurpose(config.KeyPurposeSSH) {
+		if k.IOSKeyID == keyHandleData.IOSKeyID {
+			signingPublicKey = k.Hex()
+			break
+		}
+	}
+
+	fields := []payloads.DisplayField{
 		{Label: "Application", Value: app, Monospace: util.Ptr(true)},
 	}
 
 	icon := "terminal"
 	historyTitle := "SSH Signature"
-	req := SignRequest{
-		RequestID:   requestID.String(),
-		Type:        protocol.SshAuth,
-		IOSKeyID:    keyHandleData.IOSKeyID,
+	flags32 := int32(flags)
+	application := app
+	req := payloads.MailboxSshAuthRequestPayloadV1{
+		Application: &application,
+		DeviceKeyId: keyHandleData.IOSKeyID,
 		RawData:     dataBytes,
-		Application: app,
-		Flags:       flags,
-		Timestamp:   time.Now().Unix(),
-		Command:     processInfo.Command,
-		Display: &protocol.GenericDisplaySchema{
+		Flags:       &flags32,
+		SourceInfo:  processInfo.ToSourceInfo(),
+		Display: &payloads.DisplaySchema{
 			Title:        "Authorize SSH?",
 			HistoryTitle: &historyTitle,
 			Icon:         &icon,
 			Fields:       fields,
 		},
-		SourceInfo: processInfo.ToSourceInfo(),
 	}
 
 	ctx := context.Background()
@@ -273,6 +268,7 @@ func executeSign(alg uint32, dataBytes []byte, app string, keyHandleBytes []byte
 
 	// SSH signing uses full BBS+ anonymous attestation verification.
 	decrypted, err := transport.NewRequestBuilder(cfg).
+		WithKey(keyHandleData.IOSKeyID, signingPublicKey).
 		WithClientRequestID(requestID).
 		WithTimeout(config.DefaultSSHTimeout).
 		WithExpiration(60).
@@ -282,21 +278,17 @@ func executeSign(alg uint32, dataBytes []byte, app string, keyHandleBytes []byte
 		return nil, sshErrGeneral
 	}
 
-	var signResp protocol.SignatureResponse
+	var signResp client.SigningResponse
 	if err := json.Unmarshal(decrypted, &signResp); err != nil {
 		logError("failed to parse response: %v", err)
 		return nil, sshErrGeneral
 	}
-	if signResp.Status == nil || *signResp.Status != protocol.SignatureResponseStatusApproved {
-		logError("signing rejected")
+	if !signResp.IsSuccess() {
+		logError("signing rejected: %v", signResp.Error())
 		return nil, sshErrGeneral
 	}
 
-	if signResp.Signature == nil {
-		logError("missing signature in response")
-		return nil, sshErrGeneral
-	}
-	signature := *signResp.Signature
+	signature := signResp.GetSignature()
 	if len(signature) != 64 {
 		logError("invalid signature length: %d", len(signature))
 		return nil, sshErrGeneral
@@ -304,10 +296,6 @@ func executeSign(alg uint32, dataBytes []byte, app string, keyHandleBytes []byte
 	logDebug("executeSign: signed successfully ios_key_id=%s request_id=%s sig_len=%d",
 		keyHandleData.IOSKeyID, requestID.String(), len(signature))
 
-	var counter uint32
-	if signResp.Counter != nil {
-		counter = uint32(*signResp.Counter)
-	}
-
-	return &signResult{signature: signature, counter: counter}, 0
+	// The new e2ee-payloads schema does not carry a counter field; emit 0.
+	return &signResult{signature: signature, counter: 0}, 0
 }

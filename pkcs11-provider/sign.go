@@ -52,9 +52,10 @@ import (
 	"os"
 	"unsafe"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
+	"github.com/naughtbot/cli/internal/shared/client"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/transport"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 // signInit initializes a signing operation
@@ -202,13 +203,13 @@ func performSigning(cfg *config.Config, key *config.KeyMetadata, digest []byte, 
 	ctx, cancel := context.WithTimeout(context.Background(), config.DefaultSigningTimeout)
 	defer cancel()
 
-	// Build display + payload using generated protocol types.
+	// Build display + payload using generated e2ee-payloads types.
 	display, sourceInfo := collectSigningDisplay(key, mechanism, len(digest))
-	payload := &protocol.CustomPayload{
-		Type:       protocol.Custom,
-		Display:    *display, // CustomPayload.Display is not a pointer
-		RawData:    digest,
-		SourceInfo: sourceInfo,
+	payload := &payloads.MailboxPkcs11SignRequestPayloadV1{
+		DeviceKeyId: key.Hex(),
+		Display:     display,
+		RawData:     digest,
+		SourceInfo:  sourceInfo,
 	}
 
 	fmt.Fprintf(os.Stderr, "Waiting for approval on iOS device...\n")
@@ -221,21 +222,14 @@ func performSigning(cfg *config.Config, key *config.KeyMetadata, digest []byte, 
 		return nil, err
 	}
 
-	var signResponse protocol.SignatureResponse
+	var signResponse client.SigningResponse
 	if err := json.Unmarshal(decrypted, &signResponse); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-	if signResponse.ErrorCode != nil && *signResponse.ErrorCode != 0 {
-		errMsg := "unknown error"
-		if signResponse.ErrorMessage != nil {
-			errMsg = *signResponse.ErrorMessage
-		}
-		return nil, fmt.Errorf("signing rejected: %s", errMsg)
+	if !signResponse.IsSuccess() {
+		return nil, signResponse.Error()
 	}
-	if signResponse.Signature == nil {
-		return nil, fmt.Errorf("missing signature in response")
-	}
-	signature := *signResponse.Signature
+	signature := signResponse.GetSignature()
 	if len(signature) != p256SignatureLen {
 		return nil, fmt.Errorf("invalid signature length: expected %d, got %d", p256SignatureLen, len(signature))
 	}

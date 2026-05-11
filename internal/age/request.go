@@ -8,12 +8,12 @@ import (
 	"os"
 	"time"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/log"
 	"github.com/naughtbot/cli/internal/shared/sysinfo"
 	"github.com/naughtbot/cli/internal/shared/transport"
 	"github.com/naughtbot/cli/internal/shared/util"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 var ageLog = log.New("age")
@@ -23,9 +23,15 @@ const (
 	RequestTypeAgeUnwrap = "age_unwrap"
 )
 
-// UnwrapResponse wraps the generated protocol.AgeUnwrapResponse with helper methods.
+// UnwrapResponse is a flat helper view over the discriminated
+// MailboxAgeUnwrapResponsePayloadV1 union. The success branch populates
+// FileKey; the failure branch populates ErrorCode + ErrorMessage. JSON tags
+// match the new e2ee-payloads snake_case wire format so this helper can be
+// unmarshalled from raw response bytes directly.
 type UnwrapResponse struct {
-	protocol.AgeUnwrapResponse
+	FileKey      *[]byte `json:"file_key,omitempty"`
+	ErrorCode    *int    `json:"error_code,omitempty"`
+	ErrorMessage *string `json:"error_message,omitempty"`
 }
 
 // IsSuccess returns true if the response contains a file key
@@ -42,13 +48,7 @@ func (r *UnwrapResponse) GetFileKey() []byte {
 }
 
 // GetErrorCode returns the error code as int, or nil if not present.
-func (r *UnwrapResponse) GetErrorCode() *int {
-	if r.ErrorCode == nil {
-		return nil
-	}
-	code := int(*r.ErrorCode)
-	return &code
-}
+func (r *UnwrapResponse) GetErrorCode() *int { return r.ErrorCode }
 
 // GetErrorMessage returns the error message, or empty string if not present.
 func (r *UnwrapResponse) GetErrorMessage() string {
@@ -80,28 +80,27 @@ func RequestUnwrap(cfg *config.Config, key *config.KeyMetadata, ephemeralPublic,
 
 	// Build display fields for Age unwrap approval UI
 	lockIcon := "lock.open"
-	fields := []protocol.DisplayField{
+	fields := []payloads.DisplayField{
 		{Label: "Key", Value: key.Label, Icon: &lockIcon},
 		{Label: "Key ID", Value: truncateHex(key.Hex()), Monospace: util.Ptr(true)},
 	}
 	if fileName != "" {
-		fields = append(fields, protocol.DisplayField{Label: "File", Value: fileName, Monospace: util.Ptr(true)})
+		fields = append(fields, payloads.DisplayField{Label: "File", Value: fileName, Monospace: util.Ptr(true)})
 	}
 	if fileSize > 0 {
-		fields = append(fields, protocol.DisplayField{Label: "Size", Value: fmt.Sprintf("%d bytes", fileSize)})
+		fields = append(fields, payloads.DisplayField{Label: "Size", Value: fmt.Sprintf("%d bytes", fileSize)})
 	}
 	icon := "lock.open"
 	historyTitle := "Age Decryption"
-	display := &protocol.GenericDisplaySchema{
+	display := &payloads.DisplaySchema{
 		Title:        "Decrypt file?",
 		HistoryTitle: &historyTitle,
 		Icon:         &icon,
 		Fields:       fields,
 	}
 
-	// Build the request payload using generated type
-	payload := protocol.AgeUnwrapPayload{
-		Type:               protocol.AgeUnwrapPayloadTypeAgeUnwrap,
+	// Build the request payload using the generated e2ee-payloads type.
+	payload := payloads.MailboxAgeUnwrapRequestPayloadV1{
 		EphemeralPublicHex: hex.EncodeToString(ephemeralPublic),
 		WrappedFileKey:     wrappedFileKey,
 		RecipientPublicHex: hex.EncodeToString(recipientPublic),
@@ -166,23 +165,22 @@ func MakeUnwrapFunc(cfg *config.Config, key *config.KeyMetadata, fileName string
 func EnrollAgeKey(cfg *config.Config, label string) (*config.KeyMetadata, error) {
 	ctx := context.Background()
 
-	// Build enrollment payload with GenericDisplaySchema
+	// Build enrollment payload with DisplaySchema
 	processInfo := sysinfo.GetProcessInfo()
 
 	icon := "key.fill"
 	historyTitle := "Age Key Enrolled"
 	subtitle := "Age encryption key enrollment"
-	payload := protocol.EnrollPayload{
-		Type:       protocol.Enroll,
-		Purpose:    protocol.Age,
+	payload := payloads.MailboxEnrollRequestPayloadV1{
+		Purpose:    payloads.Age,
 		Label:      &label,
 		SourceInfo: processInfo.ToSourceInfo(),
-		Display: &protocol.GenericDisplaySchema{
+		Display: &payloads.DisplaySchema{
 			Title:        "Enroll Age Key?",
 			HistoryTitle: &historyTitle,
 			Subtitle:     &subtitle,
 			Icon:         &icon,
-			Fields:       []protocol.DisplayField{},
+			Fields:       []payloads.DisplayField{},
 		},
 	}
 
@@ -211,10 +209,10 @@ func EnrollAgeKey(cfg *config.Config, label string) (*config.KeyMetadata, error)
 		return nil, err
 	}
 
-	if response.PublicKeyHex == nil {
+	if response.PublicKeyHex == "" {
 		return nil, fmt.Errorf("response missing public key")
 	}
-	publicKey, err := hex.DecodeString(*response.PublicKeyHex)
+	publicKey, err := hex.DecodeString(response.PublicKeyHex)
 	if err != nil {
 		return nil, fmt.Errorf("invalid public key hex: %w", err)
 	}
@@ -226,13 +224,11 @@ func EnrollAgeKey(cfg *config.Config, label string) (*config.KeyMetadata, error)
 	recipient := &Recipient{PublicKey: publicKey}
 	recipientStr := recipient.String()
 
-	// Create key metadata
-	iosKeyID := ""
-	if response.IosKeyId != nil {
-		iosKeyID = *response.IosKeyId
-	}
+	// Create key metadata.
+	// The new MailboxEnrollResponseApprovedV1.DeviceKeyId replaces the legacy
+	// IosKeyId field, and is always populated (non-optional in the new schema).
 	keyMeta := &config.KeyMetadata{
-		IOSKeyID:     iosKeyID,
+		IOSKeyID:     response.DeviceKeyId,
 		Label:        label,
 		PublicKey:    publicKey,
 		Algorithm:    "X25519",

@@ -5,39 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	protocol "github.com/naughtbot/cli/internal/protocol"
 )
-
-// EnrollRequest is sent to iOS for key enrollment.
-// JSON tags use camelCase to match the OpenAPI spec (protocol.EnrollPayload).
-type EnrollRequest struct {
-	RequestID   string                            `json:"requestId"`
-	Type        protocol.EnrollPayloadType        `json:"type"`
-	Purpose     protocol.AckAgentCommonKeyPurpose `json:"purpose"`
-	Algorithm   int                               `json:"algorithm"`
-	Challenge   []byte                            `json:"challenge"`
-	Application string                            `json:"application"`
-	Flags       uint8                             `json:"flags"`
-	Timestamp   int64                             `json:"timestamp"`
-	Display     *protocol.GenericDisplaySchema    `json:"display,omitempty"`
-	SourceInfo  *protocol.SourceInfo              `json:"sourceInfo,omitempty"`
-}
-
-// SignRequest is sent to iOS for signing.
-// JSON tags use camelCase to match the OpenAPI spec (protocol.SshAuthPayload).
-type SignRequest struct {
-	RequestID   string                         `json:"requestId"`
-	Type        protocol.SshAuthPayloadType    `json:"type"`
-	IOSKeyID    string                         `json:"iosKeyId"`
-	RawData     []byte                         `json:"rawData"`
-	Application string                         `json:"application"`
-	Flags       uint8                          `json:"flags"`
-	Timestamp   int64                          `json:"timestamp"`
-	Command     string                         `json:"command,omitempty"`
-	Display     *protocol.GenericDisplaySchema `json:"display,omitempty"`
-	SourceInfo  *protocol.SourceInfo           `json:"sourceInfo,omitempty"`
-}
 
 // KeyHandleData contains the data stored in a key handle.
 type KeyHandleData struct {

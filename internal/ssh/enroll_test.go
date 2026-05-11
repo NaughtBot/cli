@@ -6,10 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/sysinfo"
-	"github.com/naughtbot/cli/internal/shared/util"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 func TestBuildEnrollPayload(t *testing.T) {
@@ -25,7 +24,7 @@ func TestBuildEnrollPayload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		var p protocol.EnrollPayload
+		var p payloads.MailboxEnrollRequestPayloadV1
 		if err := json.Unmarshal(data, &p); err != nil {
 			t.Fatalf("failed to unmarshal payload: %v", err)
 		}
@@ -39,7 +38,7 @@ func TestBuildEnrollPayload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		var p protocol.EnrollPayload
+		var p payloads.MailboxEnrollRequestPayloadV1
 		if err := json.Unmarshal(data, &p); err != nil {
 			t.Fatalf("failed to unmarshal payload: %v", err)
 		}
@@ -53,7 +52,7 @@ func TestBuildEnrollPayload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		var p protocol.EnrollPayload
+		var p payloads.MailboxEnrollRequestPayloadV1
 		if err := json.Unmarshal(data, &p); err != nil {
 			t.Fatalf("failed to unmarshal payload: %v", err)
 		}
@@ -78,15 +77,12 @@ func TestBuildEnrollPayload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		var p protocol.EnrollPayload
+		var p payloads.MailboxEnrollRequestPayloadV1
 		if err := json.Unmarshal(data, &p); err != nil {
 			t.Fatalf("failed to unmarshal payload: %v", err)
 		}
-		if p.Type != protocol.Enroll {
-			t.Errorf("expected type %q, got %q", protocol.Enroll, p.Type)
-		}
-		if p.Purpose != protocol.Ssh {
-			t.Errorf("expected purpose %q, got %q", protocol.Ssh, p.Purpose)
+		if p.Purpose != payloads.Ssh {
+			t.Errorf("expected purpose %q, got %q", payloads.Ssh, p.Purpose)
 		}
 		if p.Label == nil || *p.Label != label {
 			t.Errorf("expected label %q, got %v", label, p.Label)
@@ -98,7 +94,7 @@ func TestBuildEnrollPayload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		var p protocol.EnrollPayload
+		var p payloads.MailboxEnrollRequestPayloadV1
 		if err := json.Unmarshal(data, &p); err != nil {
 			t.Fatalf("failed to unmarshal payload: %v", err)
 		}
@@ -128,7 +124,7 @@ func TestBuildEnrollPayload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		var p protocol.EnrollPayload
+		var p payloads.MailboxEnrollRequestPayloadV1
 		if err := json.Unmarshal(data, &p); err != nil {
 			t.Fatalf("failed to unmarshal payload: %v", err)
 		}
@@ -141,7 +137,7 @@ func TestBuildEnrollPayload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		var p2 protocol.EnrollPayload
+		var p2 payloads.MailboxEnrollRequestPayloadV1
 		if err := json.Unmarshal(data, &p2); err != nil {
 			t.Fatalf("failed to unmarshal payload: %v", err)
 		}
@@ -167,12 +163,31 @@ func TestParseEnrollResponse(t *testing.T) {
 	}
 	ed25519KeyHex := hex.EncodeToString(ed25519Key)
 
-	t.Run("approved P-256 response", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
+	// approvedEnvelope marshals a MailboxEnrollResponseApprovedV1 as the wire
+	// JSON the discriminated-union ParseEnrollResponse reader expects.
+	approvedEnvelope := func(approved payloads.MailboxEnrollResponseApprovedV1) []byte {
+		approved.Status = payloads.Approved
+		data, err := json.Marshal(approved)
+		if err != nil {
+			t.Fatalf("failed to marshal approved response: %v", err)
 		}
-		data, _ := json.Marshal(resp)
+		return data
+	}
+
+	rejectedEnvelope := func(rejected payloads.MailboxEnrollResponseRejectedV1) []byte {
+		rejected.Status = payloads.Rejected
+		data, err := json.Marshal(rejected)
+		if err != nil {
+			t.Fatalf("failed to marshal rejected response: %v", err)
+		}
+		return data
+	}
+
+	t.Run("approved P-256 response", func(t *testing.T) {
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+			Algorithm:    config.AlgorithmP256,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "test-key")
 		if err != nil {
@@ -196,12 +211,10 @@ func TestParseEnrollResponse(t *testing.T) {
 	})
 
 	t.Run("approved Ed25519 response", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &ed25519KeyHex,
-			Algorithm:    util.Ptr(config.AlgorithmEd25519),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: ed25519KeyHex,
+			Algorithm:    config.AlgorithmEd25519,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmEd25519, "ed-key")
 		if err != nil {
@@ -218,15 +231,12 @@ func TestParseEnrollResponse(t *testing.T) {
 		}
 	})
 
-	t.Run("error code in response", func(t *testing.T) {
-		errCode := protocol.AckAgentCommonSigningErrorCode(1)
+	t.Run("rejected status", func(t *testing.T) {
 		errMsg := "key generation failed"
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			ErrorCode:    &errCode,
+		data := rejectedEnvelope(payloads.MailboxEnrollResponseRejectedV1{
+			ErrorCode:    payloads.SigningErrorCodeN1,
 			ErrorMessage: &errMsg,
-		}
-		data, _ := json.Marshal(resp)
+		})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err == nil {
@@ -237,13 +247,10 @@ func TestParseEnrollResponse(t *testing.T) {
 		}
 	})
 
-	t.Run("error code with nil message", func(t *testing.T) {
-		errCode := protocol.AckAgentCommonSigningErrorCode(2)
-		resp := protocol.EnrollResponse{
-			Status:    protocol.EnrollResponseStatusApproved,
-			ErrorCode: &errCode,
-		}
-		data, _ := json.Marshal(resp)
+	t.Run("rejected with nil message", func(t *testing.T) {
+		data := rejectedEnvelope(payloads.MailboxEnrollResponseRejectedV1{
+			ErrorCode: payloads.SigningErrorCodeN2,
+		})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err == nil {
@@ -254,27 +261,8 @@ func TestParseEnrollResponse(t *testing.T) {
 		}
 	})
 
-	t.Run("rejected status", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusRejected,
-			PublicKeyHex: &p256KeyHex,
-		}
-		data, _ := json.Marshal(resp)
-
-		_, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
-		if err == nil {
-			t.Fatal("expected error")
-		}
-		if !strings.Contains(err.Error(), "enrollment rejected") {
-			t.Errorf("unexpected error: %v", err)
-		}
-	})
-
 	t.Run("missing public key", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status: protocol.EnrollResponseStatusApproved,
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err == nil {
@@ -287,11 +275,9 @@ func TestParseEnrollResponse(t *testing.T) {
 
 	t.Run("invalid P-256 key length 63 bytes", func(t *testing.T) {
 		shortKey := make([]byte, 63)
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: util.Ptr(hex.EncodeToString(shortKey)),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: hex.EncodeToString(shortKey),
+		})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err == nil {
@@ -307,11 +293,9 @@ func TestParseEnrollResponse(t *testing.T) {
 
 	t.Run("invalid P-256 key length 66 bytes", func(t *testing.T) {
 		longKey := make([]byte, 66)
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: util.Ptr(hex.EncodeToString(longKey)),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: hex.EncodeToString(longKey),
+		})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err == nil {
@@ -327,11 +311,9 @@ func TestParseEnrollResponse(t *testing.T) {
 
 	t.Run("invalid Ed25519 key length 31 bytes", func(t *testing.T) {
 		shortKey := make([]byte, 31)
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: util.Ptr(hex.EncodeToString(shortKey)),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: hex.EncodeToString(shortKey),
+		})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmEd25519, "k")
 		if err == nil {
@@ -347,11 +329,9 @@ func TestParseEnrollResponse(t *testing.T) {
 
 	t.Run("invalid Ed25519 key length 33 bytes", func(t *testing.T) {
 		longKey := make([]byte, 33)
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: util.Ptr(hex.EncodeToString(longKey)),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: hex.EncodeToString(longKey),
+		})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmEd25519, "k")
 		if err == nil {
@@ -367,12 +347,10 @@ func TestParseEnrollResponse(t *testing.T) {
 
 	t.Run("algorithm override from response", func(t *testing.T) {
 		// Request ecdsa but response says ed25519
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &ed25519KeyHex,
-			Algorithm:    util.Ptr(config.AlgorithmEd25519),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: ed25519KeyHex,
+			Algorithm:    config.AlgorithmEd25519,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
@@ -384,12 +362,10 @@ func TestParseEnrollResponse(t *testing.T) {
 	})
 
 	t.Run("algorithm from response used when present", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-			Algorithm:    util.Ptr(config.AlgorithmP256),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+			Algorithm:    config.AlgorithmP256,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
@@ -401,11 +377,9 @@ func TestParseEnrollResponse(t *testing.T) {
 	})
 
 	t.Run("algorithm from request used when response has no algorithm", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
@@ -417,12 +391,10 @@ func TestParseEnrollResponse(t *testing.T) {
 	})
 
 	t.Run("unsupported algorithm in response", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-			Algorithm:    util.Ptr("rsa-4096"),
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+			Algorithm:    "rsa-4096",
+		})
 
 		_, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err == nil {
@@ -433,46 +405,41 @@ func TestParseEnrollResponse(t *testing.T) {
 		}
 	})
 
-	t.Run("iOS key ID mapping", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-			IosKeyId:     util.Ptr("ios-key-uuid-123"),
-		}
-		data, _ := json.Marshal(resp)
+	t.Run("device key ID mapping", func(t *testing.T) {
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+			DeviceKeyId:  "ios-key-uuid-123",
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if meta.IOSKeyID != "ios-key-uuid-123" {
-			t.Errorf("expected iOS key ID %q, got %q", "ios-key-uuid-123", meta.IOSKeyID)
+			t.Errorf("expected device key ID %q, got %q", "ios-key-uuid-123", meta.IOSKeyID)
 		}
 	})
 
-	t.Run("no iOS key ID results in empty string", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-		}
-		data, _ := json.Marshal(resp)
+	t.Run("no device key ID results in empty string", func(t *testing.T) {
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if meta.IOSKeyID != "" {
-			t.Errorf("expected empty iOS key ID, got %q", meta.IOSKeyID)
+			t.Errorf("expected empty device key ID, got %q", meta.IOSKeyID)
 		}
 	})
 
 	t.Run("attestation mapping with all fields", func(t *testing.T) {
 		attObj := []byte("attestation-object-data")
 		attPubKeyHex := hex.EncodeToString([]byte("attestation-pub-key-data"))
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-			Attestation: &protocol.AckAgentCommonKeyMetadataAttestation{
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+			Attestation: &payloads.KeyMetadataAttestation{
 				PublicKeyHex:            hex.EncodeToString([]byte("attested-pub-key")),
 				Assertion:               []byte("assertion-data"),
 				AttestationType:         "ios_secure_enclave",
@@ -481,8 +448,7 @@ func TestParseEnrollResponse(t *testing.T) {
 				AttestationObject:       &attObj,
 				AttestationPublicKeyHex: &attPubKeyHex,
 			},
-		}
-		data, _ := json.Marshal(resp)
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
@@ -515,18 +481,16 @@ func TestParseEnrollResponse(t *testing.T) {
 	})
 
 	t.Run("attestation with nil optional fields", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-			Attestation: &protocol.AckAgentCommonKeyMetadataAttestation{
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+			Attestation: &payloads.KeyMetadataAttestation{
 				PublicKeyHex:         hex.EncodeToString([]byte("pub")),
 				Assertion:            []byte("assert"),
 				AttestationType:      "software",
 				Challenge:            []byte("chal"),
 				AttestationTimestamp: 1234567890,
 			},
-		}
-		data, _ := json.Marshal(resp)
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
@@ -544,11 +508,9 @@ func TestParseEnrollResponse(t *testing.T) {
 	})
 
 	t.Run("no attestation results in nil", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
@@ -570,11 +532,9 @@ func TestParseEnrollResponse(t *testing.T) {
 	})
 
 	t.Run("Hex is hex encoded", func(t *testing.T) {
-		resp := protocol.EnrollResponse{
-			Status:       protocol.EnrollResponseStatusApproved,
-			PublicKeyHex: &p256KeyHex,
-		}
-		data, _ := json.Marshal(resp)
+		data := approvedEnvelope(payloads.MailboxEnrollResponseApprovedV1{
+			PublicKeyHex: p256KeyHex,
+		})
 
 		meta, err := parseEnrollResponse(data, config.AlgorithmP256, "k")
 		if err != nil {
@@ -589,3 +549,4 @@ func TestParseEnrollResponse(t *testing.T) {
 		}
 	})
 }
+

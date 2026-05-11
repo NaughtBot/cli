@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
 
 // SendAndDecryptEnrollment sends an enrollment request and decrypts the response.
@@ -33,23 +33,40 @@ func SendAndDecryptEnrollment(ctx context.Context, cfg *config.Config, payload a
 }
 
 // ParseEnrollResponse parses and validates a common enrollment response payload.
-func ParseEnrollResponse(decrypted []byte) (*protocol.EnrollResponse, error) {
-	var response protocol.EnrollResponse
-	if err := json.Unmarshal(decrypted, &response); err != nil {
+//
+// The wire shape is the e2ee-payloads MailboxEnrollResponsePayloadV1 union,
+// discriminated on the `status` field (`approved` or `rejected`). On the
+// rejected branch this returns a descriptive error built from `error_code`
+// and `error_message`; on the approved branch this returns the parsed
+// MailboxEnrollResponseApprovedV1 struct so callers can read the freshly
+// minted key material.
+func ParseEnrollResponse(decrypted []byte) (*payloads.MailboxEnrollResponseApprovedV1, error) {
+	// Peek at the discriminator so we can route into the correct branch.
+	var disc struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(decrypted, &disc); err != nil {
 		return nil, fmt.Errorf("failed to parse enrollment response: %w", err)
 	}
 
-	if response.ErrorCode != nil {
-		errMsg := "unknown error"
-		if response.ErrorMessage != nil {
-			errMsg = *response.ErrorMessage
+	switch disc.Status {
+	case string(payloads.Approved):
+		var approved payloads.MailboxEnrollResponseApprovedV1
+		if err := json.Unmarshal(decrypted, &approved); err != nil {
+			return nil, fmt.Errorf("failed to parse approved enrollment response: %w", err)
 		}
-		return nil, fmt.Errorf("enrollment failed: %s (code %d)", errMsg, *response.ErrorCode)
+		return &approved, nil
+	case string(payloads.Rejected):
+		var rejected payloads.MailboxEnrollResponseRejectedV1
+		if err := json.Unmarshal(decrypted, &rejected); err != nil {
+			return nil, fmt.Errorf("failed to parse rejected enrollment response: %w", err)
+		}
+		errMsg := "unknown error"
+		if rejected.ErrorMessage != nil {
+			errMsg = *rejected.ErrorMessage
+		}
+		return nil, fmt.Errorf("enrollment failed: %s (code %d)", errMsg, rejected.ErrorCode)
+	default:
+		return nil, fmt.Errorf("enrollment response missing or unknown status: %q", disc.Status)
 	}
-
-	if response.Status != protocol.EnrollResponseStatusApproved {
-		return nil, fmt.Errorf("enrollment rejected")
-	}
-
-	return &response, nil
 }

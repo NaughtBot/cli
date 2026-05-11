@@ -85,10 +85,19 @@ import (
 	"os"
 	"unsafe"
 
-	protocol "github.com/naughtbot/cli/internal/protocol"
 	"github.com/naughtbot/cli/internal/shared/config"
 	"github.com/naughtbot/cli/internal/shared/transport"
+	payloads "github.com/naughtbot/e2ee-payloads/go"
 )
+
+// pkcs11DeriveResponse is a flat helper view over the discriminated
+// MailboxPkcs11DeriveResponsePayloadV1 union. Success branch populates
+// SharedSecret; failure branch populates ErrorCode + ErrorMessage.
+type pkcs11DeriveResponse struct {
+	SharedSecret *[]byte `json:"shared_secret,omitempty"`
+	ErrorCode    *int    `json:"error_code,omitempty"`
+	ErrorMessage *string `json:"error_message,omitempty"`
+}
 
 // deriveKey performs ECDH key derivation
 func deriveKey(
@@ -187,9 +196,9 @@ func performECDH(cfg *config.Config, key *config.KeyMetadata, theirPublicKey []b
 	defer cancel()
 
 	display, sourceInfo := collectDeriveDisplay(key, "CKM_ECDH1_DERIVE", kdf)
-	kdfParams := &protocol.EcdhKdfParams{Algorithm: &kdf}
-	payload := &protocol.EcdhDerivePayload{
-		Type:          protocol.EcdhDerive,
+	kdfParams := &payloads.Pkcs11DeriveKdfParams{Algorithm: kdf}
+	payload := &payloads.MailboxPkcs11DeriveRequestPayloadV1{
+		DeviceKeyId:   key.Hex(),
 		Display:       display,
 		PeerPublicHex: hex.EncodeToString(theirPublicKey),
 		Kdf:           kdfParams,
@@ -206,7 +215,7 @@ func performECDH(cfg *config.Config, key *config.KeyMetadata, theirPublicKey []b
 		return nil, err
 	}
 
-	var ecdhResponse protocol.EcdhDeriveResponse
+	var ecdhResponse pkcs11DeriveResponse
 	if err := json.Unmarshal(decrypted, &ecdhResponse); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
