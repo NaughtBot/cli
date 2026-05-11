@@ -1,7 +1,6 @@
 # Binaries
-/oobsign
-/oobsign-audit
-/age-plugin-oobsign
+/nb
+/age-plugin-nb
 *.exe
 *.exe~
 *.dll

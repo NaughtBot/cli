@@ -78,7 +78,7 @@ static uint8_t* copy_bytes(const uint8_t *src, size_t len) {
 import "C"
 
 /*
-SSH SecurityKey Provider for OOBSign
+SSH SecurityKey Provider for NaughtBot
 
 This implements OpenSSH's sk-api.h interface to provide hardware-backed
 SSH keys via iOS. See:

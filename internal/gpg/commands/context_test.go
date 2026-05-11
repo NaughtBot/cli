@@ -468,8 +468,8 @@ func TestReconstructCommandLine(t *testing.T) {
 	cmdLine := reconstructCommandLine(args)
 
 	// Check all components present
-	if !strings.HasPrefix(cmdLine, "oobsign gpg") {
-		t.Errorf("CommandLine should start with 'oobsign gpg': %s", cmdLine)
+	if !strings.HasPrefix(cmdLine, "nb gpg") {
+		t.Errorf("CommandLine should start with 'nb gpg': %s", cmdLine)
 	}
 	if !strings.Contains(cmdLine, "--detach-sign") {
 		t.Error("Missing --detach-sign")
@@ -495,7 +495,7 @@ func TestReconstructCommandLine_MinimalArgs(t *testing.T) {
 
 	cmdLine := reconstructCommandLine(args)
 
-	if cmdLine != "oobsign gpg --sign" {
+	if cmdLine != "nb gpg --sign" {
 		t.Errorf("Unexpected minimal command line: %q", cmdLine)
 	}
 }

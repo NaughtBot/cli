@@ -53,8 +53,8 @@ func showEnrolledKeysCmd(profileOverride string) {
 		fmt.Println()
 		fmt.Println("To enroll keys:")
 		fmt.Println("  1. Register a device via the iOS app")
-		fmt.Println("  2. Run 'oobsign login' to connect your CLI")
-		fmt.Println("  3. Run 'oobsign keys --sync' to sync keys")
+		fmt.Println("  2. Run 'nb login' to connect your CLI")
+		fmt.Println("  3. Run 'nb keys --sync' to sync keys")
 		return
 	}
 
@@ -166,7 +166,7 @@ func syncKeysCmd(profileOverride string) {
 	cfg := loadConfigWithProfile(profileOverride)
 
 	if !cfg.IsLoggedIn() {
-		die("Not logged in. Run 'oobsign login' first.")
+		die("Not logged in. Run 'nb login' first.")
 	}
 
 	syncedKeys, err := syncKeysWithConfig(context.Background(), cfg)

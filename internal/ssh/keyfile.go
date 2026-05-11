@@ -23,7 +23,7 @@ const (
 	// DefaultApplication is the default SSH application string
 	DefaultApplication = "ssh:"
 
-	// KeyHandleMagic is the uint32 marker serialized little-endian in OOBSign key handles.
+	// KeyHandleMagic is the uint32 marker serialized little-endian in NaughtBot key handles.
 	KeyHandleMagic uint32 = 0x41505052
 )
 

@@ -349,7 +349,7 @@ func TestRecipientPluginFrameworkCompatibility(t *testing.T) {
 			t.Logf("Our encoding: %s", ourEncoding)
 
 			// Create the same recipient using the plugin framework
-			pluginEncoding := plugin.EncodeRecipient("oobsign", tc.publicKey)
+			pluginEncoding := plugin.EncodeRecipient("nb", tc.publicKey)
 
 			t.Logf("Plugin framework encoding: %s", pluginEncoding)
 
@@ -365,8 +365,8 @@ func TestRecipientPluginFrameworkCompatibility(t *testing.T) {
 				return
 			}
 
-			if name != "oobsign" {
-				t.Errorf("Parsed plugin name = %v, want ackagent", name)
+			if name != "nb" {
+				t.Errorf("Parsed plugin name = %v, want nb", name)
 			}
 
 			if !bytes.Equal(data, tc.publicKey) {

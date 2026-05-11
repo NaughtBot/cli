@@ -19,7 +19,7 @@ var ageCmd = &cobra.Command{
 	Long: `Generate and manage age encryption keys stored on iOS.
 
 The age key is an X25519 key stored in the iOS Keychain with iCloud sync.
-It can be used with the standard 'age' CLI tool via the age-plugin-oobsign plugin.
+It can be used with the standard 'age' CLI tool via the age-plugin-nb plugin.
 
 Commands:
   keygen     Generate a new age key on iOS
@@ -28,18 +28,18 @@ Commands:
 
 Example workflow:
   # Generate key on iOS
-  oobsign age keygen
+  nb age keygen
 
   # Get recipient to share with others
-  oobsign age recipient
-  # -> age1oobsign1qv7x...
+  nb age recipient
+  # -> age1nb1qv7x...
 
   # Encrypt a file (anyone can do this)
-  age -r $(oobsign age recipient) -o secret.age secret.txt
+  age -r $(nb age recipient) -o secret.age secret.txt
 
   # Decrypt (requires iOS approval)
-  oobsign age identity > oobsign-age.txt
-  age -d -i oobsign-age.txt secret.age > secret.txt`,
+  nb age identity > nb-age.txt
+  age -d -i nb-age.txt secret.age > secret.txt`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
@@ -70,7 +70,7 @@ to encrypt files to you. Share this string with people who want to send
 you encrypted files.
 
 Example:
-  age -r $(oobsign age recipient) -o secret.age secret.txt`,
+  age -r $(nb age recipient) -o secret.age secret.txt`,
 	Run: runAgeRecipient,
 }
 
@@ -81,7 +81,7 @@ var ageIdentityCmd = &cobra.Command{
 	Short: "Print the age identity(ies) for decryption",
 	Long: `Print the age identity string(s) for your enrolled age key(s).
 
-The identity is a reference to your key that the age-plugin-oobsign
+The identity is a reference to your key that the age-plugin-nb
 plugin uses to locate your key and request decryption approval from iOS.
 
 This command outputs the identity string(s) directly, which can be used with
@@ -89,20 +89,20 @@ age's -i flag or saved to a file.
 
 Example:
   # Use directly with process substitution
-  age -d -i <(oobsign age identity) secret.age > secret.txt
+  age -d -i <(nb age identity) secret.age > secret.txt
 
   # Or save to a file first
-  oobsign age identity > ~/.config/oobsign/age-identity.txt
-  age -d -i ~/.config/oobsign/age-identity.txt secret.age > secret.txt`,
+  nb age identity > ~/.config/nb/age-identity.txt
+  age -d -i ~/.config/nb/age-identity.txt secret.age > secret.txt`,
 	Run: runAgeIdentity,
 }
 
 func init() {
 	// keygen flags
-	ageKeygenCmd.Flags().StringVarP(&ageKeygenLabel, "label", "l", "oobsign-age", "Label for the key")
+	ageKeygenCmd.Flags().StringVarP(&ageKeygenLabel, "label", "l", "nb-age", "Label for the key")
 
 	// identity flags
-	ageIdentityCmd.Flags().BoolVarP(&ageIdentitySave, "save", "s", false, "Save identities to default file (~/.config/oobsign/age-identity.txt)")
+	ageIdentityCmd.Flags().BoolVarP(&ageIdentitySave, "save", "s", false, "Save identities to default file (~/.config/nb/age-identity.txt)")
 
 	// Add subcommands
 	ageCmd.AddCommand(ageKeygenCmd)
@@ -115,7 +115,7 @@ func runAgeKeygen(cmd *cobra.Command, args []string) {
 	cfg := loadConfigWithProfile(profile)
 
 	if !cfg.IsLoggedIn() {
-		die("not logged in: run 'oobsign login' first")
+		die("not logged in: run 'nb login' first")
 	}
 
 	// Check for label uniqueness among Age keys
@@ -148,7 +148,7 @@ func runAgeRecipient(cmd *cobra.Command, args []string) {
 	cfg := loadConfigWithProfile(profile)
 
 	if !cfg.IsLoggedIn() {
-		die("not logged in: run 'oobsign login' first")
+		die("not logged in: run 'nb login' first")
 	}
 
 	ageKeys := cfg.KeysForPurpose(config.KeyPurposeAge)
@@ -173,7 +173,7 @@ func runAgeIdentity(cmd *cobra.Command, args []string) {
 	cfg := loadConfigWithProfile(profile)
 
 	if !cfg.IsLoggedIn() {
-		die("not logged in: run 'oobsign login' first")
+		die("not logged in: run 'nb login' first")
 	}
 
 	if ageIdentitySave {

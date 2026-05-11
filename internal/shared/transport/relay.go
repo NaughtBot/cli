@@ -126,7 +126,7 @@ func (t *RelayTransport) Send(ctx context.Context, req *Request, timeout time.Du
 	case http.StatusCreated, http.StatusOK:
 		// fall through
 	case http.StatusUnauthorized:
-		return nil, fmt.Errorf("authentication required: please run 'oobsign login' first")
+		return nil, fmt.Errorf("authentication required: please run 'nb login' first")
 	case http.StatusTooManyRequests:
 		return nil, fmt.Errorf("rate limited by relay")
 	default:

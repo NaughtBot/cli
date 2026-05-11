@@ -31,7 +31,7 @@ const (
 	ConfigVersion = 1
 
 	// AppID is the application identifier used for config paths
-	AppID = "com.oobsign.oobsign"
+	AppID = "com.naughtbot.nb"
 
 	// DefaultProfileName is the name used for the default profile
 	DefaultProfileName = "default"
@@ -168,7 +168,7 @@ type KeyMetadata struct {
 	StorageType  KeyStorageType `json:"storage_type,omitempty"` // secureEnclave, icloudKeychain, softwareLocal
 	DeviceName   string         `json:"device_name,omitempty"`  // Device name where key is stored
 	CreatedAt    time.Time      `json:"created_at"`
-	AgeRecipient string         `json:"age_recipient,omitempty"` // Age recipient string (age1oobsign1...)
+	AgeRecipient string         `json:"age_recipient,omitempty"` // Age recipient string (age1nb1...)
 
 	// GPG encryption subkey fields (for OpenPGP subkey binding)
 	// These are only populated for GPG keys that have a separate ECDH encryption subkey

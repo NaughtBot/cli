@@ -1,4 +1,4 @@
-.PHONY: build test coverage clean sk-provider pkcs11-provider oobsign-audit lint format release ensure-attested-key-zk-static-lib
+.PHONY: build test coverage clean sk-provider pkcs11-provider lint format release ensure-attested-key-zk-static-lib install
 
 # ── VERSION resolution ─────────────────────────────────────
 # Supports: make release VERSION=1.2.3 | VERSION=patch | VERSION=minor | VERSION=major
@@ -36,12 +36,12 @@ GO_LDFLAGS += -X github.com/naughtbot/cli/internal/shared/transport.AllowSkipAtt
 endif
 
 # Build the CLI binary and all components
-build: sk-provider pkcs11-provider oobsign-audit
-	go build -ldflags="$(GO_LDFLAGS)" -o oobsign ./cmd/oobsign
+build: sk-provider pkcs11-provider age-plugin-nb
+	go build -ldflags="$(GO_LDFLAGS)" -o nb ./cmd/nb
 
-# Build the oobsign-audit CLI
-oobsign-audit:
-	go build -ldflags="$(GO_LDFLAGS)" -o oobsign-audit ./cmd/oobsign-audit
+# Build the age plugin binary
+age-plugin-nb:
+	go build -ldflags="$(GO_LDFLAGS)" -o age-plugin-nb ./cmd/age-plugin-nb
 
 # Build the sk-provider shared library
 sk-provider:
@@ -97,11 +97,12 @@ endif
 
 # Clean build artifacts
 clean:
-	rm -f oobsign oobsign-audit
+	rm -f nb age-plugin-nb
 	$(MAKE) -C sk-provider clean
 	$(MAKE) -C pkcs11-provider clean
 
 install: build
-	cp oobsign /usr/local/bin/oobsign
+	cp nb /usr/local/bin/nb
+	cp age-plugin-nb /usr/local/bin/age-plugin-nb
 	$(MAKE) -C sk-provider install
 	$(MAKE) -C pkcs11-provider install

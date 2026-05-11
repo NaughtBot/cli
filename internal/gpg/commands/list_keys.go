@@ -19,7 +19,7 @@ func ListKeys(cfg *config.Config) {
 
 	if len(gpgKeys) == 0 {
 		fmt.Println("No GPG keys.")
-		fmt.Println("Use 'oobsign gpg --generate-key' to create one.")
+		fmt.Println("Use 'nb gpg --generate-key' to create one.")
 		return
 	}
 

@@ -181,11 +181,11 @@ func TestAttestationEnvironmentForIssuerURL(t *testing.T) {
 }
 
 func TestResolveAcceptSoftwareApproverKeys(t *testing.T) {
-	t.Setenv("OOBSIGN_ACCEPT_SOFTWARE_APPROVER_KEYS", "true")
+	t.Setenv("NB_ACCEPT_SOFTWARE_APPROVER_KEYS", "true")
 	assert.True(t, resolveAcceptSoftwareApproverKeys(false))
 	assert.True(t, resolveAcceptSoftwareApproverKeys(true))
 
-	t.Setenv("OOBSIGN_ACCEPT_SOFTWARE_APPROVER_KEYS", "")
+	t.Setenv("NB_ACCEPT_SOFTWARE_APPROVER_KEYS", "")
 	assert.False(t, resolveAcceptSoftwareApproverKeys(false))
 }
 

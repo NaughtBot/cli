@@ -22,7 +22,7 @@ const keyPurposeGPG = "gpg"
 // GenerateKey generates a new GPG key on the iOS device
 func GenerateKey(cfg *config.Config, args *cli.Args) {
 	if !cfg.IsLoggedIn() {
-		fmt.Fprintln(os.Stderr, "Error: Not logged in. Please run 'oobsign login' first.")
+		fmt.Fprintln(os.Stderr, "Error: Not logged in. Please run 'nb login' first.")
 		os.Exit(1)
 	}
 
@@ -119,7 +119,7 @@ func GenerateKey(cfg *config.Config, args *cli.Args) {
 	fmt.Println("Add to git config:")
 	fmt.Printf("  git config --global user.signingkey %s\n", gpgFP)
 	fmt.Printf("  git config --global commit.gpgsign true\n")
-	fmt.Printf("  git config --global gpg.program \"oobsign gpg\"\n")
+	fmt.Printf("  git config --global gpg.program \"nb gpg\"\n")
 }
 
 // KeyGenerationInfo contains the response from iOS key generation.

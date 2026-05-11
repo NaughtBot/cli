@@ -1,5 +1,5 @@
 #!/bin/sh
-# Post-install script for oobsign
+# Post-install script for nb
 
 # Update shared library cache
 if command -v ldconfig >/dev/null 2>&1; then

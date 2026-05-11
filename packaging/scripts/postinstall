@@ -1,15 +1,15 @@
 #!/bin/bash
-# OOBSign CLI Post-Install Script
+# NaughtBot CLI Post-Install Script
 
 set -e
 
 # Ensure executables have correct permissions
-chmod 755 /usr/local/bin/oobsign
-chmod 755 /usr/local/bin/age-plugin-oobsign
-chmod 755 /usr/local/lib/liboobsign-sk.dylib
-chmod 755 /usr/local/lib/liboobsign-pkcs11.dylib
+chmod 755 /usr/local/bin/nb
+chmod 755 /usr/local/bin/age-plugin-nb
+chmod 755 /usr/local/lib/libnb-sk.dylib
+chmod 755 /usr/local/lib/libnb-pkcs11.dylib
 
 # Log installation
-logger "OOBSign CLI installed successfully"
+logger "NaughtBot CLI installed successfully"
 
 exit 0

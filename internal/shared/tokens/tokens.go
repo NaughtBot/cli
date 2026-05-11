@@ -20,7 +20,7 @@ type userAgentTransport struct {
 
 func (t *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req = req.Clone(req.Context())
-	req.Header.Set("User-Agent", "oobsign-cli/"+version.Version)
+	req.Header.Set("User-Agent", "nb/"+version.Version)
 	return t.base.RoundTrip(req)
 }
 
@@ -41,7 +41,7 @@ type TokenResponse struct {
 }
 
 // DefaultClientID is the default OAuth client ID for the CLI.
-const DefaultClientID = "oobsign-cli"
+const DefaultClientID = "nb-cli"
 
 // RefreshAccessToken uses a refresh token to get a new access token.
 // It fetches the token endpoint from OIDC discovery.

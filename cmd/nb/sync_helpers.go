@@ -43,7 +43,7 @@ func resolveAcceptSoftwareApproverKeys(explicit bool) bool {
 		return true
 	}
 
-	switch strings.ToLower(os.Getenv("OOBSIGN_ACCEPT_SOFTWARE_APPROVER_KEYS")) {
+	switch strings.ToLower(os.Getenv("NB_ACCEPT_SOFTWARE_APPROVER_KEYS")) {
 	case "1", "true":
 		return true
 	default:

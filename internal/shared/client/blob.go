@@ -101,7 +101,7 @@ func (c *BlobClient) GetBlob(ctx context.Context, accessToken string) (*BlobResu
 	case http.StatusNotFound:
 		return nil, ErrNotFound
 	case http.StatusUnauthorized:
-		return nil, fmt.Errorf("authentication required: please run 'oobsign login' first")
+		return nil, fmt.Errorf("authentication required: please run 'nb login' first")
 	default:
 		return nil, fmt.Errorf("unexpected status %d: %s", resp.StatusCode(), string(resp.Body))
 	}

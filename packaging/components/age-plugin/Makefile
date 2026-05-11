@@ -12,54 +12,54 @@ all: build-darwin-arm64
 # === Build targets ===
 
 build-darwin-arm64:
-	@echo "Building age-plugin-oobsign for darwin/arm64..."
+	@echo "Building age-plugin-nb for darwin/arm64..."
 	@mkdir -p $(BUILD_DIR)/darwin-arm64
 	cd $(CLI_DIR) && GOOS=darwin GOARCH=arm64 go build \
-		-ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" \
-		-o packaging/components/age-plugin/$(BUILD_DIR)/darwin-arm64/age-plugin-oobsign ./cmd/age-plugin-oobsign
+		-ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" \
+		-o packaging/components/age-plugin/$(BUILD_DIR)/darwin-arm64/age-plugin-nb ./cmd/age-plugin-nb
 
 build-linux-amd64:
-	@echo "Building age-plugin-oobsign for linux/amd64..."
+	@echo "Building age-plugin-nb for linux/amd64..."
 	@mkdir -p $(BUILD_DIR)/linux-amd64
 	cd $(CLI_DIR) && GOOS=linux GOARCH=amd64 go build \
-		-ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" \
-		-o packaging/components/age-plugin/$(BUILD_DIR)/linux-amd64/age-plugin-oobsign ./cmd/age-plugin-oobsign
+		-ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" \
+		-o packaging/components/age-plugin/$(BUILD_DIR)/linux-amd64/age-plugin-nb ./cmd/age-plugin-nb
 
 build-linux-arm64:
-	@echo "Building age-plugin-oobsign for linux/arm64..."
+	@echo "Building age-plugin-nb for linux/arm64..."
 	@mkdir -p $(BUILD_DIR)/linux-arm64
 	cd $(CLI_DIR) && GOOS=linux GOARCH=arm64 go build \
-		-ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" \
-		-o packaging/components/age-plugin/$(BUILD_DIR)/linux-arm64/age-plugin-oobsign ./cmd/age-plugin-oobsign
+		-ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" \
+		-o packaging/components/age-plugin/$(BUILD_DIR)/linux-arm64/age-plugin-nb ./cmd/age-plugin-nb
 
 # === Tarball targets ===
 
 tarball-darwin-arm64: build-darwin-arm64
-	@echo "Creating oobsign-age-plugin darwin-arm64 tarball..."
-	@mkdir -p $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64
-	cp $(BUILD_DIR)/darwin-arm64/age-plugin-oobsign $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64/
-	cd $(BUILD_DIR) && tar -czvf oobsign-age-plugin-$(VERSION)-darwin-arm64.tar.gz oobsign-age-plugin-$(VERSION)-darwin-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64
-	@echo "Created: $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64.tar.gz"
+	@echo "Creating nb-age-plugin darwin-arm64 tarball..."
+	@mkdir -p $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64
+	cp $(BUILD_DIR)/darwin-arm64/age-plugin-nb $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64/
+	cd $(BUILD_DIR) && tar -czvf nb-age-plugin-$(VERSION)-darwin-arm64.tar.gz nb-age-plugin-$(VERSION)-darwin-arm64
+	@rm -rf $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64
+	@echo "Created: $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64.tar.gz"
 
 tarball-linux-amd64: build-linux-amd64
-	@echo "Creating oobsign-age-plugin linux-amd64 tarball..."
-	@mkdir -p $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64
-	cp $(BUILD_DIR)/linux-amd64/age-plugin-oobsign $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64/
-	cd $(BUILD_DIR) && tar -czvf oobsign-age-plugin-$(VERSION)-linux-amd64.tar.gz oobsign-age-plugin-$(VERSION)-linux-amd64
-	@rm -rf $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64
-	@echo "Created: $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-amd64.tar.gz"
+	@echo "Creating nb-age-plugin linux-amd64 tarball..."
+	@mkdir -p $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64
+	cp $(BUILD_DIR)/linux-amd64/age-plugin-nb $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64/
+	cd $(BUILD_DIR) && tar -czvf nb-age-plugin-$(VERSION)-linux-amd64.tar.gz nb-age-plugin-$(VERSION)-linux-amd64
+	@rm -rf $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64
+	@echo "Created: $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-amd64.tar.gz"
 
 tarball-linux-arm64: build-linux-arm64
-	@echo "Creating oobsign-age-plugin linux-arm64 tarball..."
-	@mkdir -p $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64
-	cp $(BUILD_DIR)/linux-arm64/age-plugin-oobsign $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64/
-	cd $(BUILD_DIR) && tar -czvf oobsign-age-plugin-$(VERSION)-linux-arm64.tar.gz oobsign-age-plugin-$(VERSION)-linux-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64
-	@echo "Created: $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-linux-arm64.tar.gz"
+	@echo "Creating nb-age-plugin linux-arm64 tarball..."
+	@mkdir -p $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64
+	cp $(BUILD_DIR)/linux-arm64/age-plugin-nb $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64/
+	cd $(BUILD_DIR) && tar -czvf nb-age-plugin-$(VERSION)-linux-arm64.tar.gz nb-age-plugin-$(VERSION)-linux-arm64
+	@rm -rf $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64
+	@echo "Created: $(BUILD_DIR)/nb-age-plugin-$(VERSION)-linux-arm64.tar.gz"
 
 clean:
 	rm -rf $(BUILD_DIR)

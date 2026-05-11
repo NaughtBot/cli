@@ -27,11 +27,11 @@ func ConfigDir() string {
 	}
 
 	// Check for environment variable (used by sk_provider and testing)
-	if envDir := os.Getenv("OOBSIGN_CONFIG_DIR"); envDir != "" {
-		cfgLog.Debug("using config dir from env OOBSIGN_CONFIG_DIR: %s", envDir)
+	if envDir := os.Getenv("NB_CONFIG_DIR"); envDir != "" {
+		cfgLog.Debug("using config dir from env NB_CONFIG_DIR: %s", envDir)
 		return envDir
 	}
-	cfgLog.Debug("OOBSIGN_CONFIG_DIR not set, using platform default")
+	cfgLog.Debug("NB_CONFIG_DIR not set, using platform default")
 
 	switch runtime.GOOS {
 	case "darwin":

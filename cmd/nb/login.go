@@ -41,7 +41,7 @@ var (
 
 var loginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Authenticate with OOBSign via QR code",
+	Short: "Authenticate with NaughtBot via QR code",
 	Run:   runLogin,
 }
 
@@ -121,7 +121,7 @@ func showConfiguration(profileOverride string) {
 	fmt.Printf("  Active Profile: %s\n", cfg.ActiveProfile)
 	effectiveProfile := cfg.EffectiveProfile()
 	if effectiveProfile != cfg.ActiveProfile {
-		fmt.Printf("  Using Profile: %s (via --profile or OOBSIGN_PROFILE)\n", effectiveProfile)
+		fmt.Printf("  Using Profile: %s (via --profile or NB_PROFILE)\n", effectiveProfile)
 	}
 	fmt.Printf("  Relay URL: %s\n", cfg.RelayURL())
 	p, _ := cfg.GetActiveProfile()
@@ -184,7 +184,7 @@ func doLogout(profileOverride string) {
 func showEnrolledKeys(profileOverride string) error {
 	cfg := loadConfigWithProfile(profileOverride)
 	if !cfg.IsLoggedIn() {
-		return fmt.Errorf("not logged in: run 'oobsign login' first")
+		return fmt.Errorf("not logged in: run 'nb login' first")
 	}
 	display.PrintEnrolledKeys(os.Stdout, cfg.Keys())
 	return nil

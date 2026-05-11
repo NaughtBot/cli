@@ -170,7 +170,7 @@ func TestIdentityUnwrap(t *testing.T) {
 			name: "no matching stanza type",
 			stanzas: []*age.Stanza{
 				{
-					Type: "X25519", // standard age type, not ackagent
+					Type: "X25519", // standard age type, not nb
 					Args: []string{base64.RawStdEncoding.EncodeToString(ephemeralPublic)},
 					Body: bytes.Repeat([]byte{0xAB}, 32),
 				},
@@ -443,7 +443,7 @@ func TestIdentityPluginFrameworkCompatibility(t *testing.T) {
 			t.Logf("Our encoding: %s", ourEncoding)
 
 			// Create the same identity using the plugin framework
-			pluginEncoding := plugin.EncodeIdentity("oobsign", []byte(tc.fingerprint))
+			pluginEncoding := plugin.EncodeIdentity("nb", []byte(tc.fingerprint))
 
 			t.Logf("Plugin framework encoding: %s", pluginEncoding)
 
@@ -459,8 +459,8 @@ func TestIdentityPluginFrameworkCompatibility(t *testing.T) {
 				return
 			}
 
-			if name != "oobsign" {
-				t.Errorf("Parsed plugin name = %v, want ackagent", name)
+			if name != "nb" {
+				t.Errorf("Parsed plugin name = %v, want nb", name)
 			}
 
 			if string(data) != tc.fingerprint {

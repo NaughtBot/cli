@@ -1,9 +1,9 @@
 .PHONY: all build-arm64 sign pkg pkg-sign notarize release tarballs clean
 
-# Version from git tag (consolidated oobsign-cli/* tags for all platforms)
-VERSION := $(shell git describe --tags --match 'oobsign-cli/*' --always --dirty 2>/dev/null | sed 's|^oobsign-cli/||' || echo "0.0.1")
-PKG_IDENTIFIER := com.oobsign.cli
-PKG_NAME := OOBSign-$(VERSION)-arm64.pkg
+# Version from git tag (consolidated nb-cli/* tags for all platforms)
+VERSION := $(shell git describe --tags --match 'nb-cli/*' --always --dirty 2>/dev/null | sed 's|^nb-cli/||' || echo "0.0.1")
+PKG_IDENTIFIER := com.naughtbot.cli
+PKG_NAME := NaughtBot-CLI-$(VERSION)-arm64.pkg
 
 # Directories
 BUILD_DIR := build
@@ -26,29 +26,29 @@ all: build-arm64
 # =============================================================================
 
 # Build ARM64 binaries for complete bundle
-build-arm64: $(ARM64_DIR)/oobsign $(ARM64_DIR)/liboobsign-sk.dylib $(ARM64_DIR)/liboobsign-pkcs11.dylib $(ARM64_DIR)/age-plugin-oobsign
+build-arm64: $(ARM64_DIR)/nb $(ARM64_DIR)/libnb-sk.dylib $(ARM64_DIR)/libnb-pkcs11.dylib $(ARM64_DIR)/age-plugin-nb
 
-$(ARM64_DIR)/oobsign:
-	@echo "Building oobsign CLI for arm64..."
+$(ARM64_DIR)/nb:
+	@echo "Building nb CLI for arm64..."
 	@mkdir -p $(ARM64_DIR)
-	cd $(CLI_DIR) && GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" -o packaging/$(ARM64_DIR)/oobsign ./cmd/oobsign
+	cd $(CLI_DIR) && GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" -o packaging/$(ARM64_DIR)/nb ./cmd/nb
 
-$(ARM64_DIR)/liboobsign-sk.dylib:
+$(ARM64_DIR)/libnb-sk.dylib:
 	@echo "Building sk-provider for arm64..."
 	@mkdir -p $(ARM64_DIR)
-	cd $(CLI_DIR)/sk-provider && CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -buildmode=c-shared -ldflags="-s -w -X main.version=$(VERSION)" -o ../packaging/$(ARM64_DIR)/liboobsign-sk.dylib .
-	@rm -f $(ARM64_DIR)/liboobsign-sk.h
+	cd $(CLI_DIR)/sk-provider && CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -buildmode=c-shared -ldflags="-s -w -X main.version=$(VERSION)" -o ../packaging/$(ARM64_DIR)/libnb-sk.dylib .
+	@rm -f $(ARM64_DIR)/libnb-sk.h
 
-$(ARM64_DIR)/liboobsign-pkcs11.dylib:
+$(ARM64_DIR)/libnb-pkcs11.dylib:
 	@echo "Building pkcs11-provider for arm64..."
 	@mkdir -p $(ARM64_DIR)
-	cd $(CLI_DIR)/pkcs11-provider && CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -buildmode=c-shared -ldflags="-s -w -X main.version=$(VERSION)" -o ../packaging/$(ARM64_DIR)/liboobsign-pkcs11.dylib .
-	@rm -f $(ARM64_DIR)/liboobsign-pkcs11.h
+	cd $(CLI_DIR)/pkcs11-provider && CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -buildmode=c-shared -ldflags="-s -w -X main.version=$(VERSION)" -o ../packaging/$(ARM64_DIR)/libnb-pkcs11.dylib .
+	@rm -f $(ARM64_DIR)/libnb-pkcs11.h
 
-$(ARM64_DIR)/age-plugin-oobsign:
-	@echo "Building age-plugin-oobsign for arm64..."
+$(ARM64_DIR)/age-plugin-nb:
+	@echo "Building age-plugin-nb for arm64..."
 	@mkdir -p $(ARM64_DIR)
-	cd $(CLI_DIR) && GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X github.com/oobsign/cli/internal/shared/version.Version=$(VERSION)" -o packaging/$(ARM64_DIR)/age-plugin-oobsign ./cmd/age-plugin-oobsign
+	cd $(CLI_DIR) && GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X github.com/naughtbot/cli/internal/shared/version.Version=$(VERSION)" -o packaging/$(ARM64_DIR)/age-plugin-nb ./cmd/age-plugin-nb
 
 # Sign binaries with Developer ID Application certificate
 sign: build-arm64
@@ -60,27 +60,27 @@ endif
 		--options runtime \
 		--timestamp \
 		--force \
-		$(ARM64_DIR)/oobsign
+		$(ARM64_DIR)/nb
 	codesign --sign "$(APPLE_DEVELOPER_ID_APP)" \
 		--options runtime \
 		--timestamp \
 		--force \
-		$(ARM64_DIR)/liboobsign-sk.dylib
+		$(ARM64_DIR)/libnb-sk.dylib
 	codesign --sign "$(APPLE_DEVELOPER_ID_APP)" \
 		--options runtime \
 		--timestamp \
 		--force \
-		$(ARM64_DIR)/liboobsign-pkcs11.dylib
+		$(ARM64_DIR)/libnb-pkcs11.dylib
 	codesign --sign "$(APPLE_DEVELOPER_ID_APP)" \
 		--options runtime \
 		--timestamp \
 		--force \
-		$(ARM64_DIR)/age-plugin-oobsign
+		$(ARM64_DIR)/age-plugin-nb
 	@echo "Verifying signatures..."
-	codesign --verify --verbose $(ARM64_DIR)/oobsign
-	codesign --verify --verbose $(ARM64_DIR)/liboobsign-sk.dylib
-	codesign --verify --verbose $(ARM64_DIR)/liboobsign-pkcs11.dylib
-	codesign --verify --verbose $(ARM64_DIR)/age-plugin-oobsign
+	codesign --verify --verbose $(ARM64_DIR)/nb
+	codesign --verify --verbose $(ARM64_DIR)/libnb-sk.dylib
+	codesign --verify --verbose $(ARM64_DIR)/libnb-pkcs11.dylib
+	codesign --verify --verbose $(ARM64_DIR)/age-plugin-nb
 
 # Create package root structure
 $(PKG_ROOT): build-arm64
@@ -88,10 +88,10 @@ $(PKG_ROOT): build-arm64
 	@rm -rf $(PKG_ROOT)
 	@mkdir -p $(PKG_ROOT)/usr/local/bin
 	@mkdir -p $(PKG_ROOT)/usr/local/lib
-	cp $(ARM64_DIR)/oobsign $(PKG_ROOT)/usr/local/bin/
-	cp $(ARM64_DIR)/age-plugin-oobsign $(PKG_ROOT)/usr/local/bin/
-	cp $(ARM64_DIR)/liboobsign-sk.dylib $(PKG_ROOT)/usr/local/lib/
-	cp $(ARM64_DIR)/liboobsign-pkcs11.dylib $(PKG_ROOT)/usr/local/lib/
+	cp $(ARM64_DIR)/nb $(PKG_ROOT)/usr/local/bin/
+	cp $(ARM64_DIR)/age-plugin-nb $(PKG_ROOT)/usr/local/bin/
+	cp $(ARM64_DIR)/libnb-sk.dylib $(PKG_ROOT)/usr/local/lib/
+	cp $(ARM64_DIR)/libnb-pkcs11.dylib $(PKG_ROOT)/usr/local/lib/
 
 # Create unsigned .pkg
 pkg: $(PKG_ROOT)
@@ -102,7 +102,7 @@ pkg: $(PKG_ROOT)
 		--version $(VERSION) \
 		--scripts scripts \
 		--install-location / \
-		$(BUILD_DIR)/oobsign-cli-component.pkg
+		$(BUILD_DIR)/nb-cli-component.pkg
 	@echo "Creating product archive..."
 	productbuild --distribution distribution.xml \
 		--package-path $(BUILD_DIR) \
@@ -159,7 +159,7 @@ pkg-unsigned: $(PKG_ROOT)
 		--version $(VERSION) \
 		--scripts scripts \
 		--install-location / \
-		$(BUILD_DIR)/oobsign-cli-component.pkg
+		$(BUILD_DIR)/nb-cli-component.pkg
 	productbuild --distribution distribution.xml \
 		--package-path $(BUILD_DIR) \
 		--resources resources \
@@ -173,30 +173,30 @@ pkg-unsigned: $(PKG_ROOT)
 tarballs: sign
 	@echo "Creating darwin-arm64 component tarballs..."
 	@mkdir -p $(BUILD_DIR)/tarballs
-	# oobsign tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-$(VERSION)-darwin-arm64
-	cp $(ARM64_DIR)/oobsign $(BUILD_DIR)/oobsign-$(VERSION)-darwin-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-$(VERSION)-darwin-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-$(VERSION)-darwin-arm64.tar.gz oobsign-$(VERSION)-darwin-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-$(VERSION)-darwin-arm64
-	# oobsign-sk-provider tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-darwin-arm64
-	cp $(ARM64_DIR)/liboobsign-sk.dylib $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-darwin-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-darwin-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-sk-provider-$(VERSION)-darwin-arm64.tar.gz oobsign-sk-provider-$(VERSION)-darwin-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-sk-provider-$(VERSION)-darwin-arm64
-	# oobsign-pkcs11 tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-darwin-arm64
-	cp $(ARM64_DIR)/liboobsign-pkcs11.dylib $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-darwin-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-darwin-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-pkcs11-$(VERSION)-darwin-arm64.tar.gz oobsign-pkcs11-$(VERSION)-darwin-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-pkcs11-$(VERSION)-darwin-arm64
-	# oobsign-age-plugin tarball
-	@mkdir -p $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64
-	cp $(ARM64_DIR)/age-plugin-oobsign $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64/
-	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64/
-	cd $(BUILD_DIR) && tar -czvf tarballs/oobsign-age-plugin-$(VERSION)-darwin-arm64.tar.gz oobsign-age-plugin-$(VERSION)-darwin-arm64
-	@rm -rf $(BUILD_DIR)/oobsign-age-plugin-$(VERSION)-darwin-arm64
+	# nb tarball
+	@mkdir -p $(BUILD_DIR)/nb-$(VERSION)-darwin-arm64
+	cp $(ARM64_DIR)/nb $(BUILD_DIR)/nb-$(VERSION)-darwin-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-$(VERSION)-darwin-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-$(VERSION)-darwin-arm64.tar.gz nb-$(VERSION)-darwin-arm64
+	@rm -rf $(BUILD_DIR)/nb-$(VERSION)-darwin-arm64
+	# nb-sk-provider tarball
+	@mkdir -p $(BUILD_DIR)/nb-sk-provider-$(VERSION)-darwin-arm64
+	cp $(ARM64_DIR)/libnb-sk.dylib $(BUILD_DIR)/nb-sk-provider-$(VERSION)-darwin-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-sk-provider-$(VERSION)-darwin-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-sk-provider-$(VERSION)-darwin-arm64.tar.gz nb-sk-provider-$(VERSION)-darwin-arm64
+	@rm -rf $(BUILD_DIR)/nb-sk-provider-$(VERSION)-darwin-arm64
+	# nb-pkcs11 tarball
+	@mkdir -p $(BUILD_DIR)/nb-pkcs11-$(VERSION)-darwin-arm64
+	cp $(ARM64_DIR)/libnb-pkcs11.dylib $(BUILD_DIR)/nb-pkcs11-$(VERSION)-darwin-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-pkcs11-$(VERSION)-darwin-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-pkcs11-$(VERSION)-darwin-arm64.tar.gz nb-pkcs11-$(VERSION)-darwin-arm64
+	@rm -rf $(BUILD_DIR)/nb-pkcs11-$(VERSION)-darwin-arm64
+	# nb-age-plugin tarball
+	@mkdir -p $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64
+	cp $(ARM64_DIR)/age-plugin-nb $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64/
+	cp $(CLI_DIR)/NOTICES $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64/
+	cd $(BUILD_DIR) && tar -czvf tarballs/nb-age-plugin-$(VERSION)-darwin-arm64.tar.gz nb-age-plugin-$(VERSION)-darwin-arm64
+	@rm -rf $(BUILD_DIR)/nb-age-plugin-$(VERSION)-darwin-arm64
 	@echo "Created component tarballs in $(BUILD_DIR)/tarballs/"
 
 # =============================================================================
@@ -207,7 +207,7 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR)
 	rm -f $(ARM64_DIR)/*.dylib $(ARM64_DIR)/*.h
-	$(MAKE) -C $(COMPONENTS_DIR)/oobsign clean
+	$(MAKE) -C $(COMPONENTS_DIR)/nb clean
 	$(MAKE) -C $(COMPONENTS_DIR)/sk-provider clean
 	$(MAKE) -C $(COMPONENTS_DIR)/pkcs11 clean
 	$(MAKE) -C $(COMPONENTS_DIR)/age-plugin clean
@@ -219,7 +219,7 @@ version:
 
 # Help
 help:
-	@echo "OOBSign CLI Packaging"
+	@echo "NaughtBot CLI Packaging"
 	@echo ""
 	@echo "Complete Bundle Targets (for macOS .pkg / Cask):"
 	@echo "  build-arm64        Build ARM64 binaries"

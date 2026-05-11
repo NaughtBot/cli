@@ -59,5 +59,5 @@ func TestRootCommand_HasVersionFlag(t *testing.T) {
 }
 
 func TestRootCommand_UseLine(t *testing.T) {
-	assert.Equal(t, "oobsign", rootCmd.Use, "root command use should be 'oobsign'")
+	assert.Equal(t, "nb", rootCmd.Use, "root command use should be 'nb'")
 }

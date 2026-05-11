@@ -48,7 +48,7 @@ func executeEnroll(alg uint32, challengeBytes []byte, app string, flags uint8) (
 		return nil, sshErrGeneral
 	}
 	if !cfg.IsLoggedIn() {
-		logError("not logged in - run 'oobsign login' first")
+		logError("not logged in - run 'nb login' first")
 		return nil, sshErrDeviceNotFound
 	}
 	logDebug("executeEnroll: config loaded active_profile=%s devices=%d",

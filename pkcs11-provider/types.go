@@ -1,4 +1,4 @@
-// Package main provides a PKCS#11 shared library for OOBSign.
+// Package main provides a PKCS#11 shared library for NaughtBot.
 // It enables any PKCS#11-compatible application to use hardware-backed
 // P-256 ECDSA signing via iOS Secure Enclave.
 package main
@@ -342,8 +342,8 @@ import "C"
 // Constants for internal use
 const (
 	// Module information
-	manufacturerID     = "OOBSign"
-	libraryDescription = "OOBSign PKCS#11"
+	manufacturerID     = "NaughtBot"
+	libraryDescription = "NaughtBot PKCS#11"
 
 	// Version
 	cryptokiMajor = 2
@@ -353,8 +353,8 @@ const (
 
 	// Slot
 	slotID          = 0
-	slotDescription = "OOBSign iOS Secure Enclave"
-	tokenLabel      = "OOBSign"
+	slotDescription = "NaughtBot iOS Secure Enclave"
+	tokenLabel      = "NaughtBot"
 	tokenModel      = "Secure Enclave"
 
 	// Key sizes for P-256

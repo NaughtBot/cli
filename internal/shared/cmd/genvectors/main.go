@@ -69,7 +69,7 @@ func main() {
 		panic(err)
 	}
 
-	plaintext := []byte("hello-ackagent")
+	plaintext := []byte("hello-naughtbot")
 	nonce := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 
 	aead, err := chacha20poly1305.New(requestKey)

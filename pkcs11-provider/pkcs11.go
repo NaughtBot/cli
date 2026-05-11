@@ -1,5 +1,5 @@
-// Package main provides a PKCS#11 shared library for OOBSign.
-// Build with: CGO_ENABLED=1 go build -buildmode=c-shared -o liboobsign-pkcs11.dylib .
+// Package main provides a PKCS#11 shared library for NaughtBot.
+// Build with: CGO_ENABLED=1 go build -buildmode=c-shared -o libnb-pkcs11.dylib .
 package main
 
 /*
@@ -700,7 +700,7 @@ func go_C_Login(hSession C.CK_SESSION_HANDLE, userType C.CK_USER_TYPE, pPin C.CK
 		return rv
 	}
 
-	// PIN is ignored - authentication happens via prior oobsign login
+	// PIN is ignored - authentication happens via prior nb login
 	return sess.login()
 }
 

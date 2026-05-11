@@ -15,7 +15,7 @@ func TestPathUsesCanonicalSharedDataDir(t *testing.T) {
 	}
 }
 
-func TestOOBSignCLIDataDoesNotShadowSharedVectorFixtures(t *testing.T) {
+func TestNbCLIDataDoesNotShadowSharedVectorFixtures(t *testing.T) {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("failed to resolve testdata package path")
@@ -25,7 +25,7 @@ func TestOOBSignCLIDataDoesNotShadowSharedVectorFixtures(t *testing.T) {
 	for _, name := range []string{"crypto_test_vectors.json", "protocol_test_vectors.json"} {
 		path := filepath.Join(cliDataDir, name)
 		if _, err := os.Lstat(path); !os.IsNotExist(err) {
-			t.Fatalf("%s should not exist under oobsign-cli/data; tests should read repo-root data directly", path)
+			t.Fatalf("%s should not exist under nb/testdata; tests should read repo-root data directly", path)
 		}
 	}
 }

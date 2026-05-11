@@ -10,12 +10,12 @@ import (
 )
 
 func TestDebugEnabled_Off(t *testing.T) {
-	t.Setenv("OOBSIGN_DEBUG", "")
+	t.Setenv("NB_DEBUG", "")
 	assert.False(t, debugEnabled())
 }
 
 func TestDebugEnabled_On(t *testing.T) {
-	t.Setenv("OOBSIGN_DEBUG", "1")
+	t.Setenv("NB_DEBUG", "1")
 	assert.True(t, debugEnabled())
 }
 
@@ -24,11 +24,11 @@ func TestDebugLogPath_UsesXDGStateHome(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", stateHome)
 
 	path := debugLogPath()
-	assert.Equal(t, filepath.Join(stateHome, "oobsign", "age-plugin-oobsign.log"), path)
+	assert.Equal(t, filepath.Join(stateHome, "nb", "age-plugin-nb.log"), path)
 }
 
 func TestDebugLog_NoFileWhenDisabled(t *testing.T) {
-	t.Setenv("OOBSIGN_DEBUG", "")
+	t.Setenv("NB_DEBUG", "")
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 
 	// Use a unique path to verify no file is created
@@ -38,11 +38,11 @@ func TestDebugLog_NoFileWhenDisabled(t *testing.T) {
 	debugLog("should not appear: %s", "test")
 
 	_, err := os.Stat(logPath)
-	assert.True(t, os.IsNotExist(err), "log file should not be created when OOBSIGN_DEBUG is unset")
+	assert.True(t, os.IsNotExist(err), "log file should not be created when NB_DEBUG is unset")
 }
 
 func TestDebugLog_WritesWhenEnabled(t *testing.T) {
-	t.Setenv("OOBSIGN_DEBUG", "1")
+	t.Setenv("NB_DEBUG", "1")
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 
 	logPath := debugLogPath()
@@ -57,7 +57,7 @@ func TestDebugLog_WritesWhenEnabled(t *testing.T) {
 }
 
 func TestDebugLog_FilePermissions(t *testing.T) {
-	t.Setenv("OOBSIGN_DEBUG", "1")
+	t.Setenv("NB_DEBUG", "1")
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 
 	logPath := debugLogPath()

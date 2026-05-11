@@ -38,8 +38,8 @@ func TestPluginName(t *testing.T) {
 	p := NewPlugin()
 	name := p.Name()
 
-	if name != "oobsign" {
-		t.Errorf("Plugin.Name() = %v, want 'ackagent'", name)
+	if name != "nb" {
+		t.Errorf("Plugin.Name() = %v, want 'nb'", name)
 	}
 }
 
@@ -63,7 +63,7 @@ func TestPluginRecipientV1(t *testing.T) {
 		},
 		{
 			name:    "wrong prefix",
-			input:   "age1notackagent" + strings.Repeat("q", 52),
+			input:   "age1notnb" + strings.Repeat("q", 52),
 			wantErr: true,
 		},
 		{
@@ -236,9 +236,9 @@ func TestWriteIdentityFile(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Override config dir temporarily
-	origConfigDir := os.Getenv("OOBSIGN_CONFIG_DIR")
-	os.Setenv("OOBSIGN_CONFIG_DIR", tempDir)
-	defer os.Setenv("OOBSIGN_CONFIG_DIR", origConfigDir)
+	origConfigDir := os.Getenv("NB_CONFIG_DIR")
+	os.Setenv("NB_CONFIG_DIR", tempDir)
+	defer os.Setenv("NB_CONFIG_DIR", origConfigDir)
 
 	testKey, _ := hex.DecodeString("e6eb32e9739a52ef8e2c95aa9f1a7f2fddc8dd9fa79eef22c7a0d0f4e52f3d1a")
 
@@ -273,7 +273,7 @@ func TestWriteIdentityFile(t *testing.T) {
 	}
 
 	// Should contain comment header
-	if !strings.Contains(contentStr, "# oobsign age identity") {
+	if !strings.Contains(contentStr, "# nb age identity") {
 		t.Errorf("identity file should contain comment header")
 	}
 
@@ -304,9 +304,9 @@ func TestWriteIdentityFileCreatesDirectory(t *testing.T) {
 	nestedDir := filepath.Join(tempDir, "nested", "config", "dir")
 
 	// Override config dir temporarily
-	origConfigDir := os.Getenv("OOBSIGN_CONFIG_DIR")
-	os.Setenv("OOBSIGN_CONFIG_DIR", nestedDir)
-	defer os.Setenv("OOBSIGN_CONFIG_DIR", origConfigDir)
+	origConfigDir := os.Getenv("NB_CONFIG_DIR")
+	os.Setenv("NB_CONFIG_DIR", nestedDir)
+	defer os.Setenv("NB_CONFIG_DIR", origConfigDir)
 
 	testKey, _ := hex.DecodeString("e6eb32e9739a52ef8e2c95aa9f1a7f2fddc8dd9fa79eef22c7a0d0f4e52f3d1a")
 
@@ -330,8 +330,8 @@ func TestWriteIdentityFileCreatesDirectory(t *testing.T) {
 
 func TestPluginConstants(t *testing.T) {
 	// Verify constants are consistent with age plugin conventions
-	if StanzaType != "oobsign" {
-		t.Errorf("StanzaType = %v, want 'ackagent'", StanzaType)
+	if StanzaType != "nb" {
+		t.Errorf("StanzaType = %v, want 'nb'", StanzaType)
 	}
 
 	if !strings.HasPrefix(RecipientPrefix, "age1") {
@@ -346,9 +346,9 @@ func TestPluginConstants(t *testing.T) {
 func TestWriteIdentityFileMultipleKeys(t *testing.T) {
 	tempDir := t.TempDir()
 
-	origConfigDir := os.Getenv("OOBSIGN_CONFIG_DIR")
-	os.Setenv("OOBSIGN_CONFIG_DIR", tempDir)
-	defer os.Setenv("OOBSIGN_CONFIG_DIR", origConfigDir)
+	origConfigDir := os.Getenv("NB_CONFIG_DIR")
+	os.Setenv("NB_CONFIG_DIR", tempDir)
+	defer os.Setenv("NB_CONFIG_DIR", origConfigDir)
 
 	testKey1, _ := hex.DecodeString("e6eb32e9739a52ef8e2c95aa9f1a7f2fddc8dd9fa79eef22c7a0d0f4e52f3d1a")
 	testKey2, _ := hex.DecodeString("a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890")

@@ -28,8 +28,8 @@ func TestUserAgentTransport_SetsHeader(t *testing.T) {
 	if receivedUA == "" {
 		t.Error("User-Agent header was not set")
 	}
-	if !hasPrefix(receivedUA, "oobsign-cli/") {
-		t.Errorf("User-Agent = %q, want prefix oobsign-cli/", receivedUA)
+	if !hasPrefix(receivedUA, "nb/") {
+		t.Errorf("User-Agent = %q, want prefix nb/", receivedUA)
 	}
 }
 
@@ -82,8 +82,8 @@ func TestTokenResponse_Fields(t *testing.T) {
 }
 
 func TestDefaultClientID(t *testing.T) {
-	if DefaultClientID != "oobsign-cli" {
-		t.Errorf("DefaultClientID = %q, want oobsign-cli", DefaultClientID)
+	if DefaultClientID != "nb-cli" {
+		t.Errorf("DefaultClientID = %q, want nb-cli", DefaultClientID)
 	}
 }
 

@@ -288,8 +288,8 @@ func makeLongfellowProofFixture(t *testing.T) longfellowProofFixture {
 
 	circuit := mustApprovalProofCircuit(t)
 	statementNow := int64(1714761600)
-	audience := "ackagent.example.com"
-	appID := "com.example.ackagent"
+	audience := "naughtbot.example.com"
+	appID := "com.example.naughtbot"
 
 	actionFields := map[string]any{
 		"action": "remove_member",
