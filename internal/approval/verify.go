@@ -120,8 +120,16 @@ func verifyApproval(
 	// key (e.g. a legacy signature-based verifier passed via
 	// WithApprovalProofVerifier) still get the device-ownership cross-check
 	// below.
-	if len(result.SigningPublicKey) == 0 || devices == nil {
+	if len(result.SigningPublicKey) == 0 {
 		return nil
+	}
+	// A verifier that surfaces a signing key MUST have a device lookup wired
+	// in so we can cross-check ownership. Refuse rather than silently
+	// bypassing the check; this is the failure mode for callers that
+	// constructed the verifier as `NewVerifier(nil, ...)` while still using
+	// a signature-based ApprovalProofVerifier.
+	if devices == nil {
+		return fmt.Errorf("approval verifier exposes signing key but no DeviceLookup is configured")
 	}
 
 	device, err := devices.GetDeviceBySigningPublicKey(ctx, result.SigningPublicKey)

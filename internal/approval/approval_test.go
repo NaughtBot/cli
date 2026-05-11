@@ -273,6 +273,42 @@ func TestVerifyApproval_ValidProof(t *testing.T) {
 	}
 }
 
+// TestVerifyApproval_FailsClosedWithoutDeviceLookup is a regression guard for
+// the WS3.2 vendoring fix: a verifier that surfaces a SigningPublicKey but
+// was constructed with a nil DeviceLookup must fail closed rather than
+// silently bypassing the device-ownership cross-check.
+func TestVerifyApproval_FailsClosedWithoutDeviceLookup(t *testing.T) {
+	signingPublicKey := mustDecodeHex(t, "021111111111111111111111111111111111111111111111111111111111111111")
+	actionFields := map[string]any{
+		"action": "remove_member",
+		"nonce":  "n1",
+	}
+	challenge, err := BuildApprovalChallenge(ApprovalRequestSeed{
+		Nonce:     "n1",
+		RequestID: "rid-1",
+	}, actionFields)
+	if err != nil {
+		t.Fatalf("BuildApprovalChallenge failed: %v", err)
+	}
+
+	err = verifyApproval(
+		context.Background(),
+		nil, // no DeviceLookup
+		&mockProofVerifier{
+			result: ApprovalProofVerificationResult{SigningPublicKey: signingPublicKey},
+		},
+		makeApprovalProof(t, challenge),
+		"admin-user",
+		actionFields,
+	)
+	if err == nil {
+		t.Fatal("expected fail-closed error when verifier exposes signing key but devices is nil")
+	}
+	if !contains(err.Error(), "no DeviceLookup is configured") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestVerifyApproval_ChallengeMismatch(t *testing.T) {
 	signingPublicKey := mustDecodeHex(t, "021111111111111111111111111111111111111111111111111111111111111111")
 	actionFields := map[string]any{
