@@ -1,0 +1,74 @@
+{
+  "description": "Cross-platform test vectors for shared relay exchange crypto. Generated from TypeScript reference implementation (@noble/hashes + @noble/ciphers). All platforms MUST produce identical outputs for these inputs. See relay-api/protocol/exchange-crypto-spec.yaml for the protocol specification.",
+  "uuid_encoding_vectors": [
+    {
+      "description": "Standard UUID (from existing test vectors)",
+      "uuid_string": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+      "expected_bytes_hex": "7c9e6679742540de944be07fc1f90ae7"
+    },
+    {
+      "description": "UUID with leading zeros",
+      "uuid_string": "00000000-0000-4000-8000-000000000001",
+      "expected_bytes_hex": "00000000000040008000000000000001"
+    },
+    {
+      "description": "UUID with all high nibbles",
+      "uuid_string": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "expected_bytes_hex": "ffffffffffff4fffbfffffffffffffff"
+    },
+    {
+      "description": "Sequential bytes (easy visual verification)",
+      "uuid_string": "01020304-0506-0708-090a-0b0c0d0e0f10",
+      "expected_bytes_hex": "0102030405060708090a0b0c0d0e0f10"
+    }
+  ],
+  "hkdf_key_derivation_vectors": [
+    {
+      "description": "Request key derivation (info='signer-request-v1')",
+      "shared_secret_hex": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      "salt_hex": "7c9e6679742540de944be07fc1f90ae7",
+      "info_string": "signer-request-v1",
+      "expected_key_hex": "adac54a1c5fe0c50147ac5658d954e2df6b4358389cb61de6f24af2fc66a779b"
+    },
+    {
+      "description": "Response key derivation (info='signer-response-v1')",
+      "shared_secret_hex": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      "salt_hex": "7c9e6679742540de944be07fc1f90ae7",
+      "info_string": "signer-response-v1",
+      "expected_key_hex": "af8c12c5654c81879a42699f3bd64a4f1d2e7e2ca8486a271fdd63b07edc3ad1"
+    },
+    {
+      "description": "Wrapping key derivation (info='signer-wrap-v1')",
+      "shared_secret_hex": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      "salt_hex": "7c9e6679742540de944be07fc1f90ae7",
+      "info_string": "signer-wrap-v1",
+      "expected_key_hex": "47eb4682e472f98b2741a1e8de343aa1c7e0a23ce63d82328a7ec3d4fc425a66"
+    }
+  ],
+  "chacha20_poly1305_encryption_vectors": [
+    {
+      "description": "Short ASCII payload ('hello')",
+      "key_hex": "adac54a1c5fe0c50147ac5658d954e2df6b4358389cb61de6f24af2fc66a779b",
+      "nonce_hex": "000102030405060708090a0b",
+      "aad_hex": "7c9e6679742540de944be07fc1f90ae7",
+      "plaintext_hex": "68656c6c6f",
+      "expected_ciphertext_hex": "d92fd5a37dc73f6108c77895627f0a0d8e2e465cca"
+    },
+    {
+      "description": "Empty payload",
+      "key_hex": "adac54a1c5fe0c50147ac5658d954e2df6b4358389cb61de6f24af2fc66a779b",
+      "nonce_hex": "000102030405060708090a0b",
+      "aad_hex": "7c9e6679742540de944be07fc1f90ae7",
+      "plaintext_hex": "",
+      "expected_ciphertext_hex": "c0aaf44c689e91c0ea8c13d548bb1d0a"
+    },
+    {
+      "description": "32-byte symmetric key (wrapping scenario)",
+      "key_hex": "adac54a1c5fe0c50147ac5658d954e2df6b4358389cb61de6f24af2fc66a779b",
+      "nonce_hex": "000102030405060708090a0b",
+      "aad_hex": "7c9e6679742540de944be07fc1f90ae7",
+      "plaintext_hex": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "expected_ciphertext_hex": "b069fca89b7db594774b45f2eb7f7261d4a8f834c8e4c99b4318a634cd913f882e8fc2690d9e9a47078f816ca6c29914"
+    }
+  ]
+}

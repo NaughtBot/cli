@@ -1,0 +1,35 @@
+{
+  "description": "Argon2id key derivation test vectors. All platforms (iOS, Android) MUST produce identical derived keys for the same inputs. Parameters: Argon2id v1.3.",
+  "vectors": [
+    {
+      "description": "Standard parameters (matching production: 64MB, 3 iter, p=4)",
+      "passphrase": "correct horse battery staple",
+      "salt_hex": "0011223344556677889900aabbccddeeff0011223344556677889900aabbccdd",
+      "time_cost": 3,
+      "memory_cost_kb": 65536,
+      "parallelism": 4,
+      "output_length": 32,
+      "derived_key_hex": "4df8a7720450be12015d896722dc0f32718ce3169eeda7b6c963fb8fd0c2e704"
+    },
+    {
+      "description": "Minimum-length passphrase (12 chars)",
+      "passphrase": "hunter2!@#Ab",
+      "salt_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "time_cost": 3,
+      "memory_cost_kb": 65536,
+      "parallelism": 4,
+      "output_length": 32,
+      "derived_key_hex": "c299d6da63225f609c95d3174664ad7a53b15945d41466eba534b91d57667693"
+    },
+    {
+      "description": "Unicode passphrase",
+      "passphrase": "pässwörd→🔑←sëcrét",
+      "salt_hex": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+      "time_cost": 3,
+      "memory_cost_kb": 65536,
+      "parallelism": 4,
+      "output_length": 32,
+      "derived_key_hex": "786be5e28f20b259ee89d09aaddf7efad86d89adb505f8b925ac8652000d83c4"
+    }
+  ]
+}
