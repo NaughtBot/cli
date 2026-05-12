@@ -83,10 +83,14 @@ Treat `*/gen/`, `testdata/`, `data/fixtures/`, `packaging/build/`, and
 The repo has a top-level `Makefile` that wraps the common flows, but plain
 `go` commands also work from the repo root.
 
-- `go build ./...` — compile every Go package in pure-Go mode. This does
-  **not** emit the c-shared providers (`libnb-sk.{dylib,so}`,
-  `libnb-pkcs11.{dylib,so}`), which require `-buildmode=c-shared` and
-  `CGO_ENABLED=1`.
+- `go build ./...` — compile every Go package, but it is **not** a
+  pure-Go build: `sk-provider/`, `pkcs11-provider/`, and
+  `internal/approval/` all `import "C"` (cgo plus the AKZK static lib),
+  so this requires `CGO_ENABLED=1`, a working C toolchain, and the
+  AKZK static lib (see `make ensure-attested-key-zk-static-lib`). It
+  also does not emit the c-shared providers (`libnb-sk.{dylib,so}`,
+  `libnb-pkcs11.{dylib,so}`), which require `-buildmode=c-shared` from
+  the sub-Makefiles.
 - `make build` — convenience target that produces `nb` and
   `age-plugin-nb` at the repo root plus the c-shared providers under
   their sub-Makefile build dirs (`sk-provider/libnb-sk.dylib`,
@@ -135,7 +139,16 @@ the sibling AKZK checkout in lane / workspace layouts).
   `github.com/naughtbot/e2ee-payloads/go`. Pin both modules by semver tag.
   Do **not** hand-write Go structs that mirror either set of schemas. If a
   needed type is missing, the fix is a new OpenAPI release in the relevant
-  source repo, not a local mirror struct.
+  source repo, not a local mirror struct. The narrow exception, during
+  the API rewire, is the temporary stub types in
+  `internal/shared/client/client.go` (`ApprovalProofIssuerKey`,
+  `ApprovalProofConfigResponse`, `AttestationData`, `ApproverInfo`):
+  the upstream `/approval-proofs/config` and approver-info endpoints have
+  not been published in `github.com/naughtbot/api/auth` yet. The TODOs
+  on each type call for them to be deleted in favour of the generated
+  types once those endpoints land. Until then, update the local stub if
+  the upstream schema changes; do not invent new local mirrors of
+  already-generated types.
 - The `github.com/naughtbot/api` module is a single root Go module with
   sub-packages `auth`, `blob`, `mailbox`. Imports are
   `github.com/naughtbot/api/auth`, **not** `github.com/naughtbot/api/go/auth`.
@@ -232,8 +245,10 @@ package boundary.
   and a paired phone fixture.
 - When a change updates the cross-repo modules
   (`github.com/naughtbot/api`, `github.com/naughtbot/e2ee-payloads/go`),
-  run `go build ./...` plus the integration suite against the matching
-  `core/` and `mobile/` versions.
+  run `go build ./...` and, once the WS3.5 integration suite lands, the
+  `-tags=integration` package set against the matching `core/` and
+  `mobile/` versions. Until then, manually exercise the affected
+  surface against a local `core/` stack and paired phone fixture.
 
 ## Release Flow
 

@@ -37,36 +37,37 @@ This repo ships four executables / shared libraries:
 
 ### From source
 
-Requires Go 1.26+ with `CGO_ENABLED=1` for the shared-library providers and
-a C++17 compiler for the bundled
-[`attested-key-zk`](https://github.com/NaughtBot/attested-key-zk) verifier.
-
-```sh
-go install github.com/naughtbot/cli/cmd/nb@latest
-go install github.com/naughtbot/cli/cmd/age-plugin-nb@latest
-```
-
-To build the shared-library providers (`libnb-sk`, `libnb-pkcs11`) plus
-everything above into the working tree, you need a sibling
+Requires Go 1.26+ with `CGO_ENABLED=1` (the providers and the bundled
+approval-proof verifier all use cgo), a C++17 compiler, and a sibling
 [`attested-key-zk`](https://github.com/NaughtBot/attested-key-zk) checkout
-alongside the `cli` checkout (the `make ensure-attested-key-zk-static-lib`
-target shells out to `make -C ../attested-key-zk static-lib`):
+alongside the `cli` checkout. `nb` and `age-plugin-nb` both pull in the
+AKZK static lib transitively, so the AKZK sibling is required even for
+the `go install` quick path:
 
 ```sh
 git clone https://github.com/NaughtBot/cli
 git clone https://github.com/NaughtBot/attested-key-zk
 cd cli
-# Build the AKZK static lib first so the c-shared providers can link
-# against it. `make test` and the top-level Makefile rule both invoke
-# this; `make build` does not depend on it.
+# Build the AKZK static lib first so cgo links cleanly. `make test` and
+# the top-level Makefile rule both invoke this; `make build` and
+# `go install` do not.
 make ensure-attested-key-zk-static-lib
-make build
+
+# Either go install (binaries only, dropped under $GOBIN):
+go install github.com/naughtbot/cli/cmd/nb@latest
+go install github.com/naughtbot/cli/cmd/age-plugin-nb@latest
+
+# …or make build (binaries + c-shared providers in the working tree):
+make build           # darwin default — produces .dylib providers
+# On Linux, build the providers' linux sub-target separately:
+make -C sk-provider linux
+make -C pkcs11-provider linux
 ```
 
 After `make build` the `nb` and `age-plugin-nb` binaries land in the repo
 root; the c-shared providers land under their sub-Makefile dirs
 (`sk-provider/libnb-sk.dylib`, `pkcs11-provider/libnb-pkcs11.dylib` on
-macOS; build the `linux` sub-Makefile target for the `.so` equivalents).
+macOS; `*.so` after the `linux` sub-target on Linux).
 
 ### Pre-built (when WS3.6 lands)
 
@@ -110,41 +111,60 @@ reads the profile state in place.
 ### age
 
 ```sh
-nb age keygen                # generate an X25519 age key on your phone
-nb age recipient             # print the age1nb1… recipient (share this)
-nb age identity              # print the age plugin identity (for -i)
+nb age keygen                # (stubbed) generate an X25519 age key on your phone
+nb age recipient             # local: print the age1nb1… recipient for share
+nb age identity              # local: print the AGE-PLUGIN-NB-1… identity for -i
 
 # Encrypt — anyone with the recipient can do this, no phone needed:
 age -r "$(nb age recipient)" -o secret.age secret.txt
 
-# Decrypt — your phone prompts for biometric approval:
+# Decrypt — once the relay rewire lands, your phone prompts for
+# biometric approval. Today, age-plugin-nb's unwrap call hits the
+# stubbed relay transport and returns ErrRelayNotImplemented.
 age -d -i <(nb age identity) -o secret.txt secret.age
 ```
 
 ### GPG
 
 ```sh
-nb gpg --generate-key --name "Alice" --email "alice@example.com"
-nb gpg --list-keys
+nb gpg --generate-key --name "Alice" --email "alice@example.com"   # stubbed
+nb gpg --list-keys                                                  # local
+nb gpg --export FINGERPRINT                                         # local
 
-# Sign — git uses this shape with -bsau FINGERPRINT:
+# Sign — git uses this shape with -bsau FINGERPRINT.
+# Today the sign path hits the stubbed relay transport; once the
+# rewire lands the phone prompts and the signature is streamed back.
 echo "test" | nb gpg -bsau FINGERPRINT
 
-# Encrypt + decrypt:
+# Encrypt + decrypt — same status: stubbed today, phone-backed when
+# the relay transport is rewired.
 echo "hello" | nb gpg -e -r FINGERPRINT --armor > msg.asc
 nb gpg --decrypt msg.asc
 ```
 
 `nb gpg` is wire-compatible with the GPG command-line surface that `git`
-and other tooling drive, so it can be set as `gpg.program` in `~/.gitconfig`
-to sign commits and tags under hardware-backed keys.
+and other tooling drive. Git's `gpg.program` config must name a single
+executable rather than a command + subcommand, so wrap `nb gpg` in a tiny
+script (e.g. `~/bin/nb-gpg`) and point `gpg.program` at the wrapper:
+
+```sh
+cat > ~/bin/nb-gpg <<'WRAPPER'
+#!/bin/sh
+exec nb gpg "$@"
+WRAPPER
+chmod +x ~/bin/nb-gpg
+git config --global gpg.program "$HOME/bin/nb-gpg"
+```
 
 ### SSH
 
 ```sh
+# Key generation is stubbed today — it requires the rewired relay
+# transport to ask the phone to mint a hardware-backed key. Once the
+# rewire lands these emit the public key plus a key-handle blob.
 nb ssh --generate-key -n laptop -o ~/.ssh/id_nb         # ECDSA P-256, default
 nb ssh --generate-key -n laptop-ed25519 -t ed25519 -o ~/.ssh/id_nb_ed25519
-nb ssh --list-keys
+nb ssh --list-keys                                       # local
 
 # Then use the key like any other SSH key. The OpenSSH `ssh` client
 # selects the SK provider via the `SecurityKeyProvider` config option —
@@ -173,8 +193,15 @@ nb --profile personal age recipient
 
 Profiles isolate enrolled keys, pairing state, and config. Override the
 config directory with `NB_CONFIG_DIR=/path/to/dir`, select a non-active
-profile with `NB_PROFILE=<name>` or `--profile <name>`, and set log
-verbosity with `NB_LOG_LEVEL=debug|info|warn|error`.
+profile in the `nb` binary with `NB_PROFILE=<name>` or `--profile <name>`,
+and set log verbosity with `NB_LOG_LEVEL=debug|info|warn|error`.
+
+The profile override is currently honoured only by `nb` itself. The
+plugin binaries (`age-plugin-nb`) and the c-shared providers
+(`libnb-pkcs11`, `libnb-sk`) load config directly and always read the
+active profile from the config file. To exercise a non-active profile
+through the plugin / PKCS#11 / SSH-SK paths, run `nb profile use <name>`
+first to switch the active profile on disk.
 
 Default config locations (all driven by the `AppID = "com.naughtbot.nb"`
 constant in `internal/shared/config/types.go`):
