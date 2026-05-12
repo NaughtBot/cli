@@ -118,9 +118,19 @@ nb ssh --generate-key -n laptop -o ~/.ssh/id_nb         # ECDSA P-256, default
 nb ssh --generate-key -n laptop-ed25519 -t ed25519 -o ~/.ssh/id_nb_ed25519
 nb ssh --list-keys
 
-# Then use the key like any other SSH key. With the libnb-sk provider
-# loaded, the phone signs each authentication challenge:
-SSH_SK_PROVIDER=/usr/local/lib/libnb-sk.dylib ssh -i ~/.ssh/id_nb user@host
+# Then use the key like any other SSH key. The OpenSSH `ssh` client
+# selects the SK provider via the `SecurityKeyProvider` config option —
+# either inline:
+ssh -o SecurityKeyProvider=/usr/local/lib/libnb-sk.dylib -i ~/.ssh/id_nb user@host
+
+# …or in `~/.ssh/config`:
+#
+#   Host my-host
+#     SecurityKeyProvider /usr/local/lib/libnb-sk.dylib
+#     IdentityFile        ~/.ssh/id_nb
+#
+# (`ssh-keygen(1)` and `ssh-add(1)` honour the `SSH_SK_PROVIDER`
+# environment variable instead; `ssh(1)` itself does not.)
 ```
 
 ### Profiles

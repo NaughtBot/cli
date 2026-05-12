@@ -85,8 +85,12 @@ The repo has a top-level `Makefile` that wraps the common flows, but plain
 - `make build` — convenience target that drops `nb`, `age-plugin-nb`,
   `libnb-sk.{dylib,so}`, and `libnb-pkcs11.{dylib,so}` into the repo
   root. Internally invokes the `sk-provider/` and `pkcs11-provider/`
-  sub-Makefiles for the c-shared artefacts and ensures the
-  `attested-key-zk` static lib is built from the sibling AKZK checkout.
+  sub-Makefiles for the c-shared artefacts. Note that `make build` does
+  **not** depend on `ensure-attested-key-zk-static-lib` — only `make
+  test` does. In a fresh workspace where the sibling AKZK static lib has
+  not been built yet, run `make ensure-attested-key-zk-static-lib`
+  first (or `make test` once) before `make build`, otherwise the
+  c-shared providers fail with missing header / library errors.
 - `go test ./...` — run all unit tests. Anything tagged `integration` is
   excluded (and the directory does not exist yet — see below).
 - `go test -tags=integration ./tests/integration/...` — once the WS3.5
@@ -193,9 +197,14 @@ package boundary.
 - Unit tests under `crypto/` read JSON test vectors from repo-root
   `testdata/<name>`, resolved by `internal/shared/testdata.Path`. Some
   legacy fixtures (BBS pseudonym, relay auth) still live under
-  `data/fixtures/` and are read directly by their tests. Regenerate the
-  shared `testdata/` JSON via `go run ./cmd/gentestvectors` after a wire
-  change; add new fixtures under `testdata/`, not a sibling location.
+  `data/fixtures/` and are read directly by their tests. After a wire
+  change, regenerate the shared `testdata/` JSON by **redirecting**
+  `cmd/gentestvectors` output to the target fixture (the binary writes
+  to stdout); for example
+  `go run ./cmd/gentestvectors > testdata/<fixture>.json`. Running
+  `go run ./cmd/gentestvectors` without a redirection leaves the
+  checked-in fixtures unchanged. Add new fixtures under `testdata/`,
+  not a sibling location.
 - Bug fixes must include a regression test next to the changed code.
 - Cross-surface changes (anything that touches the envelope payload types,
   HTTP client wiring, or the c-shared providers) must validate the
