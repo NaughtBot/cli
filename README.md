@@ -13,8 +13,10 @@ This repo ships four executables / shared libraries:
 - `nb` — the main CLI. Subcommands: `login`, `age`, `gpg`, `ssh`, `keys`,
   `profile`.
 - `age-plugin-nb` — an [age](https://age-encryption.org/) plugin that
-  delegates X25519 unwrap to your phone. Used transparently by the standard
-  `age` and `rage` tools when you decrypt to an `age1nb1…` identity.
+  delegates X25519 unwrap to your phone. The recipient strings the plugin
+  emits are `age1nb1…` (encryption); the identity strings consumed via
+  `age -i` are `AGE-PLUGIN-NB-1…`. `age` and `rage` invoke the plugin
+  automatically when they see either form.
 - `libnb-sk.{dylib,so}` — an OpenSSH `SecurityKey` provider shared library.
   Load it from `ssh(1)` via the `SecurityKeyProvider` config option (`-o
   SecurityKeyProvider=/path/to/libnb-sk.dylib` or a `SecurityKeyProvider`
@@ -45,16 +47,26 @@ go install github.com/naughtbot/cli/cmd/age-plugin-nb@latest
 ```
 
 To build the shared-library providers (`libnb-sk`, `libnb-pkcs11`) plus
-everything above into the working tree:
+everything above into the working tree, you need a sibling
+[`attested-key-zk`](https://github.com/NaughtBot/attested-key-zk) checkout
+alongside the `cli` checkout (the `make ensure-attested-key-zk-static-lib`
+target shells out to `make -C ../attested-key-zk static-lib`):
 
 ```sh
-git clone https://github.com/NaughtBot/cli && cd cli
-# In a fresh checkout, build the AKZK static lib first so the c-shared
-# providers can link against it. `make test` and the top-level Makefile
-# rule both invoke this; `make build` does not depend on it.
+git clone https://github.com/NaughtBot/cli
+git clone https://github.com/NaughtBot/attested-key-zk
+cd cli
+# Build the AKZK static lib first so the c-shared providers can link
+# against it. `make test` and the top-level Makefile rule both invoke
+# this; `make build` does not depend on it.
 make ensure-attested-key-zk-static-lib
 make build
 ```
+
+After `make build` the `nb` and `age-plugin-nb` binaries land in the repo
+root; the c-shared providers land under their sub-Makefile dirs
+(`sk-provider/libnb-sk.dylib`, `pkcs11-provider/libnb-pkcs11.dylib` on
+macOS; build the `linux` sub-Makefile target for the `.so` equivalents).
 
 ### Pre-built (when WS3.6 lands)
 
@@ -70,23 +82,30 @@ The pending release workflow will publish:
 Pair the CLI to your phone, then enroll a key per surface (SSH, GPG, age)
 and use it from the matching standard tool.
 
+> **Status — phone-backed request flows are stubbed.** Beyond `nb login`,
+> the request paths that talk to your phone (enrollment, signing,
+> decrypt, key sync) currently terminate at
+> `client.ErrNotImplemented` / `transport.ErrRelayNotImplemented`
+> because the relay transport and approver-key fetch have not been
+> rewired against `github.com/naughtbot/api` yet (mailbox-DPoP follow-up
+> to [NaughtBot/cli#12](https://github.com/NaughtBot/cli/issues/12)).
+> The snippets below describe the intended UX once that re-wire lands.
+> Local-only operations (`nb keys`, `nb profile *`, `nb login --logout`)
+> are usable today.
+
 ### Pair
 
-> **Status — pairing is temporarily disabled.** `nb login` is being
-> rewired against the new `github.com/naughtbot/api/auth` pairing surface
-> and every invocation currently returns `login: not yet rewired to
-> NaughtBot/api/auth pairing surface` (tracked under
-> [NaughtBot/cli#12](https://github.com/NaughtBot/cli/issues/12)
-> follow-ups). The `nb login --logout` sub-mode still works because it
-> is a local-only operation. Existing profiles can still log out and
-> re-pair once the new flow lands. The snippet below describes the
-> intended flow once that re-wire lands; it does **not** work today.
-
 ```sh
-nb login                     # scan the QR code with the NaughtBot app
-nb keys --sync               # pull enrolled signing keys down from your phone
-nb keys                      # show enrolled keys grouped by purpose
+nb login                     # (stubbed) scan the QR code with the NaughtBot app
+nb keys --sync               # (stubbed) pull enrolled signing keys from your phone
+nb keys                      # show enrolled keys grouped by purpose (local-only)
 ```
+
+`nb login` itself currently returns
+`login: not yet rewired to NaughtBot/api/auth pairing surface`; the
+`--logout` sub-mode is local-only and still works. `nb keys --sync`
+hits the stubbed relay transport. `nb keys` (no flag) is local-only and
+reads the profile state in place.
 
 ### age
 

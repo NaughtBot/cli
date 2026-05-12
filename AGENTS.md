@@ -87,15 +87,19 @@ The repo has a top-level `Makefile` that wraps the common flows, but plain
   **not** emit the c-shared providers (`libnb-sk.{dylib,so}`,
   `libnb-pkcs11.{dylib,so}`), which require `-buildmode=c-shared` and
   `CGO_ENABLED=1`.
-- `make build` — convenience target that drops `nb`, `age-plugin-nb`,
-  `libnb-sk.{dylib,so}`, and `libnb-pkcs11.{dylib,so}` into the repo
-  root. Internally invokes the `sk-provider/` and `pkcs11-provider/`
-  sub-Makefiles for the c-shared artefacts. Note that `make build` does
-  **not** depend on `ensure-attested-key-zk-static-lib` — only `make
-  test` does. In a fresh workspace where the sibling AKZK static lib has
-  not been built yet, run `make ensure-attested-key-zk-static-lib`
+- `make build` — convenience target that produces `nb` and
+  `age-plugin-nb` at the repo root plus the c-shared providers under
+  their sub-Makefile build dirs (`sk-provider/libnb-sk.dylib`,
+  `pkcs11-provider/libnb-pkcs11.dylib` on macOS; the sub-Makefiles'
+  `linux` target produces the `.so` equivalents). Note that `make build`
+  does **not** depend on `ensure-attested-key-zk-static-lib` — only
+  `make test` does. In a fresh workspace where the sibling AKZK static
+  lib has not been built yet, run `make ensure-attested-key-zk-static-lib`
   first (or `make test` once) before `make build`, otherwise the
-  c-shared providers fail with missing header / library errors.
+  c-shared providers fail with missing header / library errors. The
+  ensure target shells out to `make -C ../attested-key-zk static-lib`
+  and therefore requires the sibling `attested-key-zk` checkout to
+  exist (see `WORKSPACE_ROOT/repos.txt` / the lane workspace layout).
 - `go test ./...` — run all unit tests. Anything tagged `integration` is
   excluded (and the directory does not exist yet — see below).
 - `go test -tags=integration ./tests/integration/...` — once the WS3.5
@@ -207,14 +211,18 @@ package boundary.
 - Unit tests under `crypto/` read JSON test vectors from repo-root
   `testdata/<name>`, resolved by `internal/shared/testdata.Path`. Some
   legacy fixtures (BBS pseudonym, relay auth) still live under
-  `data/fixtures/` and are read directly by their tests. After a wire
-  change, regenerate the shared `testdata/` JSON by **redirecting**
-  `cmd/gentestvectors` output to the target fixture (the binary writes
-  to stdout); for example
-  `go run ./cmd/gentestvectors > testdata/<fixture>.json`. Running
-  `go run ./cmd/gentestvectors` without a redirection leaves the
-  checked-in fixtures unchanged. Add new fixtures under `testdata/`,
-  not a sibling location.
+  `data/fixtures/` and are read directly by their tests. The
+  `cmd/gentestvectors` binary writes JSON to stdout and currently emits
+  **only** the `gpg_vectors` + `ssh_vectors` sections; the shared
+  `testdata/crypto_test_vectors.json` also contains `encryption_vectors`
+  and `sas_vectors` written by other generators. Do **not** redirect
+  `go run ./cmd/gentestvectors` directly over the shared fixture
+  (that drops the other sections and breaks unrelated tests). Capture
+  the output to an intermediate file
+  (`go run ./cmd/gentestvectors > /tmp/gpg_ssh_vectors.json`) and merge
+  the regenerated sections into the shared fixture, or extend the
+  generator to emit the full fixture shape. Add new fixtures under
+  `testdata/`, not a sibling location.
 - Bug fixes must include a regression test next to the changed code.
 - Cross-surface changes (anything that touches the envelope payload types,
   HTTP client wiring, or the c-shared providers) must validate the
