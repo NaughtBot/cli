@@ -137,13 +137,13 @@ tarballs-arm64: build-arm64
 
 deb-amd64: build-amd64
 	@echo "Creating amd64 deb packages..."
-	# nb-cli (CLI binary)
+	# nb (CLI binary)
 	fpm -s dir -t deb --architecture amd64 \
-		--name nb-cli \
+		--name nb \
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/nb/nb" \
+		--description "NaughtBot CLI for hardware-backed signing" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
 		--depends libc6 \
 		--package $(BUILD_DIR)/ \
@@ -154,9 +154,9 @@ deb-amd64: build-amd64
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
+		--depends "nb = $(VERSION)" \
 		--depends libc6 \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -167,9 +167,9 @@ deb-amd64: build-amd64
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
+		--depends "nb = $(VERSION)" \
 		--depends libc6 \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -180,35 +180,22 @@ deb-amd64: build-amd64
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Age encryption plugin for NaughtBot" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
+		--depends "nb = $(VERSION)" \
 		--package $(BUILD_DIR)/ \
 		$(BUILD_DIR)/amd64/age-plugin-nb=/usr/local/bin/age-plugin-nb
-	# nb (meta-package)
-	fpm -s empty -t deb --architecture amd64 \
-		--name nb \
-		--version $(VERSION) \
-		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Complete NaughtBot CLI suite (meta-package)" \
-		--url "https://github.com/nb/nb" \
-		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
-		--depends "nb-sk-provider = $(VERSION)" \
-		--depends "nb-pkcs11 = $(VERSION)" \
-		--depends "nb-age-plugin = $(VERSION)" \
-		--package $(BUILD_DIR)/
 	@echo "Created deb packages in $(BUILD_DIR)/"
 
 deb-arm64: build-arm64
 	@echo "Creating arm64 deb packages..."
-	# nb-cli (CLI binary)
+	# nb (CLI binary)
 	fpm -s dir -t deb --architecture arm64 \
-		--name nb-cli \
+		--name nb \
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/nb/nb" \
+		--description "NaughtBot CLI for hardware-backed signing" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
 		--depends libc6 \
 		--package $(BUILD_DIR)/ \
@@ -219,9 +206,9 @@ deb-arm64: build-arm64
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
+		--depends "nb = $(VERSION)" \
 		--depends libc6 \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -232,9 +219,9 @@ deb-arm64: build-arm64
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
+		--depends "nb = $(VERSION)" \
 		--depends libc6 \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -245,35 +232,22 @@ deb-arm64: build-arm64
 		--version $(VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Age encryption plugin for NaughtBot" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
+		--depends "nb = $(VERSION)" \
 		--package $(BUILD_DIR)/ \
 		$(BUILD_DIR)/arm64/age-plugin-nb=/usr/local/bin/age-plugin-nb
-	# nb (meta-package)
-	fpm -s empty -t deb --architecture arm64 \
-		--name nb \
-		--version $(VERSION) \
-		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Complete NaughtBot CLI suite (meta-package)" \
-		--url "https://github.com/nb/nb" \
-		--license "MIT" \
-		--depends "nb-cli = $(VERSION)" \
-		--depends "nb-sk-provider = $(VERSION)" \
-		--depends "nb-pkcs11 = $(VERSION)" \
-		--depends "nb-age-plugin = $(VERSION)" \
-		--package $(BUILD_DIR)/
 	@echo "Created deb packages in $(BUILD_DIR)/"
 
 rpm-amd64: build-amd64
 	@echo "Creating x86_64 rpm packages..."
-	# nb-cli (CLI binary)
+	# nb (CLI binary)
 	fpm -s dir -t rpm --architecture x86_64 \
-		--name nb-cli \
+		--name nb \
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/nb/nb" \
+		--description "NaughtBot CLI for hardware-backed signing" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
 		--depends glibc \
 		--package $(BUILD_DIR)/ \
@@ -284,9 +258,9 @@ rpm-amd64: build-amd64
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb = $(RPM_VERSION)" \
 		--depends glibc \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -297,9 +271,9 @@ rpm-amd64: build-amd64
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb = $(RPM_VERSION)" \
 		--depends glibc \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -310,35 +284,22 @@ rpm-amd64: build-amd64
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Age encryption plugin for NaughtBot" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb = $(RPM_VERSION)" \
 		--package $(BUILD_DIR)/ \
 		$(BUILD_DIR)/amd64/age-plugin-nb=/usr/local/bin/age-plugin-nb
-	# nb (meta-package)
-	fpm -s empty -t rpm --architecture x86_64 \
-		--name nb \
-		--version $(RPM_VERSION) \
-		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Complete NaughtBot CLI suite (meta-package)" \
-		--url "https://github.com/nb/nb" \
-		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
-		--depends "nb-sk-provider = $(RPM_VERSION)" \
-		--depends "nb-pkcs11 = $(RPM_VERSION)" \
-		--depends "nb-age-plugin = $(RPM_VERSION)" \
-		--package $(BUILD_DIR)/
 	@echo "Created rpm packages in $(BUILD_DIR)/"
 
 rpm-arm64: build-arm64
 	@echo "Creating aarch64 rpm packages..."
-	# nb-cli (CLI binary)
+	# nb (CLI binary)
 	fpm -s dir -t rpm --architecture aarch64 \
-		--name nb-cli \
+		--name nb \
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Out-of-band approval CLI tool" \
-		--url "https://github.com/nb/nb" \
+		--description "NaughtBot CLI for hardware-backed signing" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
 		--depends glibc \
 		--package $(BUILD_DIR)/ \
@@ -349,9 +310,9 @@ rpm-arm64: build-arm64
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "SSH SecurityKey provider for NaughtBot (software keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb = $(RPM_VERSION)" \
 		--depends glibc \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -362,9 +323,9 @@ rpm-arm64: build-arm64
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "PKCS#11 provider for NaughtBot (hardware keys)" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb = $(RPM_VERSION)" \
 		--depends glibc \
 		--after-install postinstall.sh \
 		--package $(BUILD_DIR)/ \
@@ -375,24 +336,11 @@ rpm-arm64: build-arm64
 		--version $(RPM_VERSION) \
 		--maintainer "NaughtBot <hello@naughtbot.com>" \
 		--description "Age encryption plugin for NaughtBot" \
-		--url "https://github.com/nb/nb" \
+		--url "https://github.com/naughtbot/cli" \
 		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
+		--depends "nb = $(RPM_VERSION)" \
 		--package $(BUILD_DIR)/ \
 		$(BUILD_DIR)/arm64/age-plugin-nb=/usr/local/bin/age-plugin-nb
-	# nb (meta-package)
-	fpm -s empty -t rpm --architecture aarch64 \
-		--name nb \
-		--version $(RPM_VERSION) \
-		--maintainer "NaughtBot <hello@naughtbot.com>" \
-		--description "Complete NaughtBot CLI suite (meta-package)" \
-		--url "https://github.com/nb/nb" \
-		--license "MIT" \
-		--depends "nb-cli = $(RPM_VERSION)" \
-		--depends "nb-sk-provider = $(RPM_VERSION)" \
-		--depends "nb-pkcs11 = $(RPM_VERSION)" \
-		--depends "nb-age-plugin = $(RPM_VERSION)" \
-		--package $(BUILD_DIR)/
 	@echo "Created rpm packages in $(BUILD_DIR)/"
 
 # =============================================================================

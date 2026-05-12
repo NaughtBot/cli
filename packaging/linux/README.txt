@@ -74,4 +74,4 @@ Requirements
 
 More Information
 ----------------
-https://github.com/nb/nb
+https://github.com/naughtbot/cli
