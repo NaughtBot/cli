@@ -211,7 +211,6 @@ clean:
 	$(MAKE) -C $(COMPONENTS_DIR)/sk-provider clean
 	$(MAKE) -C $(COMPONENTS_DIR)/pkcs11 clean
 	$(MAKE) -C $(COMPONENTS_DIR)/age-plugin clean
-	$(MAKE) -C $(COMPONENTS_DIR)/complete clean
 
 # Show current version
 version:
