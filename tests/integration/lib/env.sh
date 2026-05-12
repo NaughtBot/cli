@@ -202,12 +202,24 @@ if [[ -z "${_NB_ENV_SH_LOADED:-}" ]]; then
     }
 
     # list_slots: emit one slot number per line, ascending.
+    #
+    # Honour the recorded `parallel-count` when present so that stale
+    # slot directories from a prior larger run do not leak into the next
+    # dispatch. Without this gate, `./setup.sh --parallel 2` followed by
+    # `./run-parallel.sh` would still see slots 0..N-1 from the previous
+    # run-of-N and assign suites to stale simulators/config dirs.
     list_slots() {
+        local count
+        count="$(read_parallel_count)"
         local f
         for f in /tmp/nb-e2e-slot-*/env.sh; do
             [[ -f "$f" ]] || continue
             local dir="${f%/env.sh}"
-            echo "${dir##*-slot-}"
+            local slot="${dir##*-slot-}"
+            if [[ -n "$count" && "$slot" =~ ^[0-9]+$ ]] && (( slot >= count )); then
+                continue
+            fi
+            echo "$slot"
         done | sort -n
     }
 

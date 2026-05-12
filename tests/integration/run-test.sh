@@ -61,9 +61,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$SUITE" in
-    login|ssh|gpg|age|pkcs11) ;;
+    ssh|gpg|age|pkcs11) ;;
+    login)
+        log_error "suite 'login' is not present in this repo (the legacy XCUITest"
+        log_error "harness has not been re-introduced against the NaughtBot iOS"
+        log_error "approver yet). See tests/integration/README.md for context."
+        exit 2;;
     *)
-        log_error "unknown suite: $SUITE (expected: login | ssh | gpg | age | pkcs11)"
+        log_error "unknown suite: $SUITE (expected: ssh | gpg | age | pkcs11)"
         exit 2;;
 esac
 
@@ -139,7 +144,7 @@ run_suite() {
         export SKIP_VERIFY_ATTESTATION=true
     fi
 
-    local -a go_test_cmd=(go test -v -count=1 -tags=e2e)
+    local -a go_test_cmd=(go test -v -count=1 -tags=integration)
     if [[ -n "$GO_TEST_TIMEOUT" ]]; then
         go_test_cmd+=(-timeout "$GO_TEST_TIMEOUT")
     fi

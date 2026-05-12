@@ -245,7 +245,7 @@ print_summary() {
         "CLI config dir:    $NB_CONFIG_DIR" \
         "Env snapshot:      $(nb_e2e_env_file)" \
         "" \
-        "Next: ./run-test.sh <suite> --e2e    (suites: login ssh gpg age pkcs11)"
+        "Next: ./run-test.sh <suite> --e2e    (suites: ssh gpg age pkcs11)"
 }
 
 # --------------------------------------------------------------------------
@@ -305,7 +305,14 @@ parallel_create_slots() {
 
     for slot in $(seq 0 $((PARALLEL_SLOTS - 1))); do
         local sim_id="${SLOT_SIM_IDS[$slot]}"
-        xcrun simctl bootstatus "$sim_id" -b >/dev/null 2>&1 || true
+        # Mirror the single-slot path: surface bootstatus failures here so
+        # parallel setup aborts before xcodebuild/install/login run against
+        # an unusable UDID. Silencing this previously hid simulator-boot
+        # failures until they surfaced much later as opaque test errors.
+        if ! xcrun simctl bootstatus "$sim_id" -b >/dev/null 2>&1; then
+            log_error "  slot $slot: simulator $sim_id failed to reach booted state"
+            exit 1
+        fi
         log_info "  slot $slot: simulator booted ($sim_id)"
     done
 }
@@ -381,38 +388,16 @@ parallel_write_slot_envs() {
 }
 
 parallel_run_logins() {
-    log_step "running login suite on each slot concurrently"
-    local slot pid
-    local -a LOGIN_PIDS=()
-    local -a LOGIN_LOGS=()
-    for slot in $(seq 0 $((PARALLEL_SLOTS - 1))); do
-        local log_file="/tmp/nb-parallel-login-slot${slot}-$(date +%Y%m%d-%H%M%S).log"
-        LOGIN_LOGS[$slot]="$log_file"
-        log_info "  slot $slot: starting login → $log_file"
-        (
-            "$SCRIPT_DIR/run-test.sh" login --e2e --slot "$slot"
-        ) >"$log_file" 2>&1 &
-        LOGIN_PIDS[$slot]=$!
-    done
-
-    local any_failed=0
-    for slot in $(seq 0 $((PARALLEL_SLOTS - 1))); do
-        pid="${LOGIN_PIDS[$slot]}"
-        if wait "$pid"; then
-            log_ok "  slot $slot: login PASSED"
-            mark_env_login_complete "$slot"
-        else
-            log_error "  slot $slot: login FAILED (see ${LOGIN_LOGS[$slot]})"
-            any_failed=1
-        fi
-    done
-    if (( any_failed )); then
-        log_error "one or more slot logins failed; aborting setup"
-        for slot in $(seq 0 $((PARALLEL_SLOTS - 1))); do
-            log_warn "  slot $slot log: ${LOGIN_LOGS[$slot]}"
-        done
-        exit 1
-    fi
+    # The legacy harness ran the `login` suite on every slot here to bootstrap
+    # CLI login state per slot. The login suite has not been re-introduced in
+    # the cli-extracted layout yet (it depends on a NaughtBot-side XCUITest
+    # bundle that has not been ported), so for the moment parallel setup
+    # stops after the build + simulator boot. Each slot's env.sh is still
+    # written so the non-login suites can be dispatched from a separate
+    # login-driver once it exists.
+    log_warn "skipping per-slot login: the login suite has not been moved to nb/cli yet"
+    log_warn "the non-login suites (ssh/gpg/age/pkcs11) will need an out-of-band"
+    log_warn "login step before run-parallel.sh can dispatch them"
 }
 
 parallel_print_summary() {
@@ -428,7 +413,7 @@ parallel_print_summary() {
     done
     lines+=("Parallel-count file: $NB_E2E_META_DIR/parallel-count")
     lines+=("")
-    lines+=("Next: ./run-parallel.sh                      (all five suites)")
+    lines+=("Next: ./run-parallel.sh                      (ssh,gpg,age,pkcs11)")
     lines+=("      ./run-parallel.sh --suites ssh,gpg     (subset)")
     lines+=("      ./run-test.sh gpg --e2e --slot 0       (single slot)")
     log_banner "NaughtBot E2E parallel setup complete" "${lines[@]}"

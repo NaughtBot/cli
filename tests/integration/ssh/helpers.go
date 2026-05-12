@@ -108,22 +108,34 @@ func copyDylibToTempdir(t *testing.T, src, dstDir string) string {
 // nb-ssh-server service. Honours NB_SSH_CONTAINER, then queries
 // `docker compose ps -q`. Failing both, the test is marked failed via
 // t.Fatalf; we never silently fall back to a hardcoded name.
+//
+// The compose stack is owned by the sibling `core/` checkout (see
+// `setup.sh`/`teardown.sh` and `nb_workspace_root` in lib/common.sh); we
+// resolve it via WORKSPACE_ROOT, falling back to `<cli>/..` for the
+// canonical workspace layout. Pointing at the cli repo would let Docker
+// Compose search the cli dir and its parents, which is fragile and depends
+// on the host's `compose.yaml` discovery order.
 func resolveSSHContainer(t *testing.T) string {
 	t.Helper()
 	if v := os.Getenv("NB_SSH_CONTAINER"); v != "" {
 		return v
 	}
+	composeDir := os.Getenv("WORKSPACE_ROOT")
+	if composeDir == "" {
+		composeDir = filepath.Join(repoRoot(t), "..")
+	}
+	composeDir = filepath.Join(composeDir, "core")
 	cmd := exec.Command("docker", "compose",
 		"--profile", "nb-e2e-testing",
 		"ps", "-q", "nb-ssh-server")
-	cmd.Dir = repoRoot(t)
+	cmd.Dir = composeDir
 	out, err := cmd.Output()
 	if err != nil {
-		t.Fatalf("resolveSSHContainer: docker compose ps failed: %v", err)
+		t.Fatalf("resolveSSHContainer: docker compose ps failed (cwd=%s): %v", composeDir, err)
 	}
 	id := strings.TrimSpace(string(out))
 	if id == "" {
-		t.Fatalf("resolveSSHContainer: no container id for nb-ssh-server (is the docker stack up?)")
+		t.Fatalf("resolveSSHContainer: no container id for nb-ssh-server (is the docker stack up at %s?)", composeDir)
 	}
 	return id
 }

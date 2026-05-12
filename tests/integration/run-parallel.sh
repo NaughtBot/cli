@@ -8,7 +8,7 @@
 #
 # Usage:
 #   ./run-parallel.sh                                    # all default suites
-#   ./run-parallel.sh --suites login,ssh,age,gpg,pkcs11  # explicit list
+#   ./run-parallel.sh --suites ssh,age,gpg,pkcs11        # explicit list
 #   ./run-parallel.sh --suites ssh,gpg                   # subset
 #   ./run-parallel.sh --timeout 15m                      # per-suite timeout
 #   ./run-parallel.sh --verbose                          # stream child output
@@ -29,7 +29,7 @@ source "$SCRIPT_DIR/lib/common.sh"
 # shellcheck source=./lib/env.sh
 source "$SCRIPT_DIR/lib/env.sh"
 
-DEFAULT_SUITES="login,ssh,age,gpg,pkcs11"
+DEFAULT_SUITES="ssh,age,gpg,pkcs11"
 SUITES_ARG="$DEFAULT_SUITES"
 TIMEOUT="10m"
 VERBOSE=0
@@ -72,30 +72,29 @@ if (( ${#SLOTS[@]} == 0 )); then
     exit 2
 fi
 
-# Validate every slot has completed login before trying non-login suites.
-# (Login suites are idempotent — we let them re-run.)
 SUITES_LIST="${SUITES_ARG//,/ }"
-NEEDS_PRE_LOGIN=0
+
+# Reject `login` upfront: the login suite has not been moved to nb/cli yet,
+# so the parallel runner has nothing to dispatch for it. Letting it through
+# would surface as a confusing per-slot "suite directory does not exist".
 for s in $SUITES_LIST; do
-    if [[ "$s" != "login" ]]; then
-        NEEDS_PRE_LOGIN=1
-        break
+    if [[ "$s" == "login" ]]; then
+        log_error "suite 'login' is not present in this repo (the legacy XCUITest"
+        log_error "harness has not been re-introduced against the NaughtBot iOS"
+        log_error "approver yet). See tests/integration/README.md for context."
+        exit 2
     fi
 done
 
-if (( NEEDS_PRE_LOGIN )); then
-    for slot in "${SLOTS[@]}"; do
-        if ! load_slot_env_state "$slot" >/dev/null 2>&1; then
-            log_error "slot $slot env.sh missing; run ./setup.sh --parallel $PARALLEL_COUNT --clean-start"
-            exit 2
-        fi
-        if [[ "${NB_E2E_LOGIN_DONE:-0}" != "1" ]]; then
-            log_error "slot $slot has not completed login (NB_E2E_LOGIN_DONE!=1)"
-            log_error "run: ./run-test.sh login --e2e --slot $slot"
-            exit 2
-        fi
-    done
-fi
+# Each slot must have an env.sh from `./setup.sh --parallel N`. The legacy
+# harness additionally required NB_E2E_LOGIN_DONE=1 from the login suite;
+# that gate is suspended until the login suite is reintroduced.
+for slot in "${SLOTS[@]}"; do
+    if ! load_slot_env_state "$slot" >/dev/null 2>&1; then
+        log_error "slot $slot env.sh missing; run ./setup.sh --parallel $PARALLEL_COUNT --clean-start"
+        exit 2
+    fi
+done
 
 NUM_SLOTS=${#SLOTS[@]}
 log_banner "NaughtBot E2E parallel runner" \
