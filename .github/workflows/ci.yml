@@ -40,13 +40,7 @@ jobs:
       - name: Build
         run: go build ./...
 
-      # The CLI ships with vector-based regression tests that read shared
-      # fixture JSON from `<repo>/../data/`. WS3.4 will copy those fixtures
-      # into the repo and fix the resolver path; until then we skip the
-      # impacted tests. Everything else runs. Drop the -skip regex once
-      # WS3.4 lands.
       - name: Test
         env:
           CGO_ENABLED: "1"
-          SKIP_PATTERN: 'TestCrossLanguageVectors|TestComputeSASAgainstVectors|TestSAS(Device|Sorting)|TestSSHVectors|TestGPGVectors|TestCrossPlatformFingerprint|TestBuildPublicKeyBlob|TestComputeSSHFingerprint|TestBuildKeyHandle|TestWrite(Public|Private)KeyFile|TestWriteKeyFiles|TestWritePrivateKeyFilePermissions|TestSSHSK|TestEnrollResponseParsing|TestSignResponseParsing|TestSSHSignature|TestSignatureFormatMatchesiOSExpectations|TestPathUsesCanonicalSharedDataDir'
-        run: go test -skip "$SKIP_PATTERN" ./...
+        run: go test ./...
