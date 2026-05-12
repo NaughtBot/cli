@@ -16,7 +16,10 @@ This repo ships four executables / shared libraries:
   delegates X25519 unwrap to your phone. Used transparently by the standard
   `age` and `rage` tools when you decrypt to an `age1nb1…` identity.
 - `libnb-sk.{dylib,so}` — an OpenSSH `SecurityKey` provider shared library.
-  Set `SSH_SK_PROVIDER=/path/to/libnb-sk.dylib` and use it like any other
+  Load it from `ssh(1)` via the `SecurityKeyProvider` config option (`-o
+  SecurityKeyProvider=/path/to/libnb-sk.dylib` or a `SecurityKeyProvider`
+  entry in `~/.ssh/config`), and from `ssh-keygen(1)` / `ssh-add(1)` via
+  `SSH_SK_PROVIDER=/path/to/libnb-sk.dylib`. Then use it like any other
   `ed25519-sk` / `ecdsa-sk` key.
 - `libnb-pkcs11.{dylib,so}` — a PKCS#11 module that exposes your enrolled
   signing keys to anything that speaks PKCS#11 (GPG smartcard mode, OpenSSL,
@@ -46,6 +49,10 @@ everything above into the working tree:
 
 ```sh
 git clone https://github.com/NaughtBot/cli && cd cli
+# In a fresh checkout, build the AKZK static lib first so the c-shared
+# providers can link against it. `make test` and the top-level Makefile
+# rule both invoke this; `make build` does not depend on it.
+make ensure-attested-key-zk-static-lib
 make build
 ```
 
@@ -65,19 +72,21 @@ and use it from the matching standard tool.
 
 ### Pair
 
+> **Status — pairing is temporarily disabled.** `nb login` is being
+> rewired against the new `github.com/naughtbot/api/auth` pairing surface
+> and every invocation currently returns `login: not yet rewired to
+> NaughtBot/api/auth pairing surface` (tracked under
+> [NaughtBot/cli#12](https://github.com/NaughtBot/cli/issues/12)
+> follow-ups). The `nb login --logout` sub-mode still works because it
+> is a local-only operation. Existing profiles can still log out and
+> re-pair once the new flow lands. The snippet below describes the
+> intended flow once that re-wire lands; it does **not** work today.
+
 ```sh
 nb login                     # scan the QR code with the NaughtBot app
 nb keys --sync               # pull enrolled signing keys down from your phone
 nb keys                      # show enrolled keys grouped by purpose
 ```
-
-> **Note — pairing is temporarily disabled.** `nb login` is being rewired
-> against the new `github.com/naughtbot/api/auth` pairing surface and
-> currently returns `login: not yet rewired to NaughtBot/api/auth pairing
-> surface` (tracked under [NaughtBot/cli#12](https://github.com/NaughtBot/cli/issues/12)
-> follow-ups). The `nb login --logout` sub-mode still works because it is
-> a local-only operation. Existing profiles can still log out and re-pair
-> once the new flow lands.
 
 ### age
 
@@ -148,11 +157,13 @@ config directory with `NB_CONFIG_DIR=/path/to/dir`, select a non-active
 profile with `NB_PROFILE=<name>` or `--profile <name>`, and set log
 verbosity with `NB_LOG_LEVEL=debug|info|warn|error`.
 
-Default config locations:
+Default config locations (all driven by the `AppID = "com.naughtbot.nb"`
+constant in `internal/shared/config/types.go`):
 
-- Linux: `~/.config/nb/`.
+- Linux: `$XDG_CONFIG_HOME/com.naughtbot.nb/` or
+  `~/.config/com.naughtbot.nb/`.
 - macOS: `~/Library/Application Support/com.naughtbot.nb/`.
-- Windows: `%AppData%\NaughtBot\nb\`.
+- Windows: `%APPDATA%\com.naughtbot.nb\`.
 
 Run `nb <command> --help` for the full flag list on any subcommand.
 

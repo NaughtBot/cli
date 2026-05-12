@@ -39,7 +39,12 @@ and `e2ee-payloads/` contracts are the source of truth.
 - `cmd/gentestvectors/` — developer-only generator that emits the JSON test
   vector fixtures under `testdata/`.
 - `sk-provider/` — c-shared OpenSSH `SecurityKey` provider (`libnb-sk.dylib`
-  / `libnb-sk.so`), loaded by OpenSSH via `SSH_SK_PROVIDER`.
+  / `libnb-sk.so`). The OpenSSH `ssh(1)` client loads it via the
+  `SecurityKeyProvider` config option (`-o
+  SecurityKeyProvider=/path/to/libnb-sk.dylib` or matching
+  `~/.ssh/config` entry); `ssh-keygen(1)` and `ssh-add(1)` load it via
+  the `SSH_SK_PROVIDER` env var. Do not document the env var as the
+  `ssh(1)` loader — OpenSSH ignores it for the client.
 - `pkcs11-provider/` — c-shared PKCS#11 module (`libnb-pkcs11.dylib` /
   `libnb-pkcs11.so`), loaded by GPG / SSH / openssl as a PKCS#11 token.
 - `internal/` — shared packages, all non-importable from outside this repo:
@@ -101,8 +106,13 @@ The repo has a top-level `Makefile` that wraps the common flows, but plain
   arm64 binaries plus the c-shared providers for the `.pkg` payload.
   Other useful targets: `pkg` / `pkg-unsigned` (build the `.pkg`),
   `pkg-sign`, `notarize`, `release`, `tarballs`. The Linux equivalents
-  live under `packaging/linux/` (`make -C packaging/linux`). There is no
-  top-level `make -C packaging build` target.
+  live under `packaging/linux/`. The Linux default `all` target builds
+  both `linux/amd64` and `linux/arm64` and the arm64 branch needs a
+  cross-compiler (`CC=aarch64-linux-gnu-gcc`), so on a normal
+  `linux/amd64` dev host run the architecture-specific target instead:
+  `make -C packaging/linux build-amd64` (or `packages-amd64`,
+  `tarballs-amd64`). There is no top-level `make -C packaging build`
+  target.
 - `go vet ./...` — vet pass. Wired into `make lint`, which also runs the
   sub-Makefile lints for the c-shared providers.
 - `golangci-lint run` — only if `.golangci.yml` is present in the repo
