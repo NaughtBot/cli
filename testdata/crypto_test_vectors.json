@@ -1,0 +1,322 @@
+{
+  "encryption_vectors": {
+    "description": "Test vectors for E2E encryption (P-256 ECDH + ChaCha20-Poly1305)",
+    "request_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "request_id_bytes_hex": "7c9e6679742540de944be07fc1f90ae7",
+    "requester_ephemeral_private_hex": "caf42fdaf7c3c4b114c44792a3b271ca691352003d8000ae41069f5386c7317b",
+    "requester_ephemeral_public_hex": "049aeac5a04bfef06f83ab1981332e15123263600ab5bb5beed77a7c657bea45bb889d8be4e9f277a070d90b41839801a8ca32f240789e725c3d851a6ebae8d837",
+    "signer_identity_private_hex": "2e55b02fc84856643e9384c15b18b99632e3765299f835be74799f927284ca5f",
+    "signer_identity_public_hex": "0424641f4f6bfb05f956076bd571690f3479df0c847720bd4796b87f9bcfe70c62459f725d58bab97321f205cb490f28b221f37b81ee327cd568f943e19da920c3",
+    "signer_ephemeral_private_hex": "140215f3e70f689dfd735456a591f143d183b39ed65daa63a785e90100499e88",
+    "signer_ephemeral_public_hex": "04b5bcb5ad4ef7458b37035650d1a293247e37e2fa1b362d1f45eeb97daff40043a58829363abb557f1066165fa4aac8592d45bcec8c51ebddc9a3370e49f5b9dd",
+    "request_key_hex": "c523e5b21f43e5e28354d5419a744aadcb6e011e8412205b62ed1ca827a0d058",
+    "response_key_hex": "aaeec405f3724adeda4a2c48110451c43ddb7d803531fc35af9bca3455e4ab8f",
+    "plaintext_hex": "68656c6c6f2d617070726f766572",
+    "nonce_hex": "000102030405060708090a0b",
+    "aad_hex": "7c9e6679742540de944be07fc1f90ae7",
+    "ciphertext_hex": "ba678705712d6aac754da71a1b7e77ddc1a505d1743d53676742f7c70392"
+  },
+  "sas_vectors": [
+    {
+      "description": "Single device with zero requester key",
+      "requester_public_key_hex": "020000000000000000000000000000000000000000000000000000000000000000",
+      "device_keys": [
+        {
+          "device_id": "11111111-1111-1111-1111-111111111111",
+          "public_key_hex": "020101010101010101010101010101010101010101010101010101010101010101"
+        }
+      ],
+      "expected_words": [
+        "fox",
+        "avocado",
+        "herb",
+        "pig",
+        "banana",
+        "owl"
+      ],
+      "expected_emojis": [
+        "🦊",
+        "🥑",
+        "🌿",
+        "🐷",
+        "🍌",
+        "🦉"
+      ],
+      "expected_word_string": "fox-avocado-herb-pig-banana-owl",
+      "expected_emoji_string": "🦊 🥑 🌿 🐷 🍌 🦉"
+    },
+    {
+      "description": "Two devices - tests sorting by key hex (0203 < 0204)",
+      "requester_public_key_hex": "020202020202020202020202020202020202020202020202020202020202020202",
+      "device_keys": [
+        {
+          "device_id": "ffffffff-ffff-4fff-ffff-ffffffffffff",
+          "public_key_hex": "020404040404040404040404040404040404040404040404040404040404040404"
+        },
+        {
+          "device_id": "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+          "public_key_hex": "020303030303030303030303030303030303030303030303030303030303030303"
+        }
+      ],
+      "expected_words": [
+        "custard",
+        "rhino",
+        "hospital",
+        "plane",
+        "whale",
+        "camera"
+      ],
+      "expected_emojis": [
+        "🍮",
+        "🦏",
+        "🏥",
+        "✈️",
+        "🐳",
+        "📷"
+      ],
+      "expected_word_string": "custard-rhino-hospital-plane-whale-camera",
+      "expected_emoji_string": "🍮 🦏 🏥 ✈️ 🐳 📷"
+    },
+    {
+      "description": "Real-looking compressed keys from encryption vectors",
+      "requester_public_key_hex": "039aeac5a04bfef06f83ab1981332e15123263600ab5bb5beed77a7c657bea45bb",
+      "device_keys": [
+        {
+          "device_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+          "public_key_hex": "0324641f4f6bfb05f956076bd571690f3479df0c847720bd4796b87f9bcfe70c62"
+        }
+      ],
+      "expected_words": [
+        "turkey",
+        "violin",
+        "lion",
+        "grapes",
+        "fish",
+        "bulb"
+      ],
+      "expected_emojis": [
+        "🦃",
+        "🎻",
+        "🦁",
+        "🍇",
+        "🐟",
+        "💡"
+      ],
+      "expected_word_string": "turkey-violin-lion-grapes-fish-bulb",
+      "expected_emoji_string": "🦃 🎻 🦁 🍇 🐟 💡"
+    },
+    {
+      "description": "Sorting divergence - UUID sort differs from key hex sort",
+      "requester_public_key_hex": "020505050505050505050505050505050505050505050505050505050505050505",
+      "device_keys": [
+        {
+          "device_id": "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+          "public_key_hex": "03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        {
+          "device_id": "ffffffff-ffff-4fff-ffff-ffffffffffff",
+          "public_key_hex": "020000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ],
+      "expected_words": [
+        "herb",
+        "apple",
+        "monkey",
+        "peanut",
+        "cactus",
+        "otter"
+      ],
+      "expected_emojis": [
+        "🌿",
+        "🍎",
+        "🐵",
+        "🥜",
+        "🌵",
+        "🦦"
+      ],
+      "expected_word_string": "herb-apple-monkey-peanut-cactus-otter",
+      "expected_emoji_string": "🌿 🍎 🐵 🥜 🌵 🦦"
+    }
+  ],
+  "fingerprint_vectors": {
+    "description": "Cross-platform GPG V4 fingerprint test vectors. All platforms (CLI, iOS, Android) MUST produce identical fingerprints for the same key material and timestamp.",
+    "ed25519": {
+      "description": "Ed25519 EdDSA key (RFC 4880bis) — the Ed25519 public key for the all-zeros private key",
+      "public_key_hex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa3f4a18446b0b8d183f8e3",
+      "creation_timestamp": 1700000000,
+      "fingerprint_hex": "96fc06ea0d0ed73c5cd9187a955e4e90aaf71974",
+      "key_id_hex": "955e4e90aaf71974"
+    },
+    "curve25519_ecdh": {
+      "description": "Curve25519 ECDH subkey — the Curve25519 base point (u=9) in native (little-endian) format",
+      "public_key_hex": "0900000000000000000000000000000000000000000000000000000000000000",
+      "creation_timestamp": 1700000000,
+      "fingerprint_hex": "5a09c1d19bf2bac544de52743af2da6df8d81164",
+      "key_id_hex": "3af2da6df8d81164"
+    },
+    "p256": {
+      "description": "P-256 ECDSA key — the P-256 base point (generator G)",
+      "public_key_uncompressed_hex": "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5",
+      "public_key_compressed_hex": "036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
+      "creation_timestamp": 1700000000,
+      "fingerprint_hex": "13ffc7df20cd6abfcaed58992d007acdcd30cca6",
+      "key_id_hex": "2d007acdcd30cca6"
+    }
+  },
+  "gpg_vectors": {
+    "description": "OpenPGP V4 ECDSA P-256 signature test vectors (RFC 4880, RFC 6637)",
+    "key_material": {
+      "description": "P-256 ECDSA key pair (deterministic for testing only)",
+      "private_key_d_hex": "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721",
+      "public_key_x_hex": "60fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6",
+      "public_key_y_hex": "7903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+      "public_key_uncompressed_hex": "0460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+      "creation_timestamp": 1700000000,
+      "fingerprint_hex": "59d4dc6e32eb5fbde87346d4a306e9cced778338",
+      "key_id_hex": "a306e9cced778338"
+    },
+    "public_key_packet": {
+      "description": "Complete public key block for gpg --import (pubkey + userid + self-sig)",
+      "packet_body_hex": "046553f10013082a8648ce3d03010702030460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+      "packet_hex": "9852046553f10013082a8648ce3d03010702030460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+      "user_id": "AckAgent Test Key <test@ackagent.com>",
+      "user_id_packet_hex": "b42541636b4167656e742054657374204b6579203c746573744061636b6167656e742e636f6d3e",
+      "self_sig_packet_hex": "887504131308001d05026553f10016210459d4dc6e32eb5fbde87346d4a306e9cced778338000a0910a306e9cced77833832cc00fe36c1c1cf0d279a36f50bf580efd4a15bdfa6c97fe5a25929e61dce77d6bbef5a00ff4283b480b4b3cec5e4ab5b55448f468f14c3cdc623773a116c34e0edcbabd5cc",
+      "full_public_key_hex": "9852046553f10013082a8648ce3d03010702030460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299b42541636b4167656e742054657374204b6579203c746573744061636b6167656e742e636f6d3e887504131308001d05026553f10016210459d4dc6e32eb5fbde87346d4a306e9cced778338000a0910a306e9cced77833832cc00fe36c1c1cf0d279a36f50bf580efd4a15bdfa6c97fe5a25929e61dce77d6bbef5a00ff4283b480b4b3cec5e4ab5b55448f468f14c3cdc623773a116c34e0edcbabd5cc",
+      "armored": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmFIEZVPxABMIKoZIzj0DAQcCAwRg/tS6JVqdMclh63TGNW1owEm4kjth+mzmaWIu\nYPKftnkD/hAIuLyZpBrp6VYovGTy8bIMLX6fUXejwpTURiKZtCVBY2tBZ2VudCBU\nZXN0IEtleSA8dGVzdEBhY2thZ2VudC5jb20+iHUEExMIAB0FAmVT8QAWIQRZ1Nxu\nMutfvehzRtSjBunM7XeDOAAKCRCjBunM7XeDODLMAP42wcHPDSeaNvUL9YDv1KFb\n36bJf+WiWSnmHc531rvvWgD/QoO0gLSzzsXkq1tVRI9GjxTDzcYjdzoRbDTg7cur\n1cw=\n=Hpqx\n-----END PGP PUBLIC KEY BLOCK-----\n"
+    },
+    "signature_cases": [
+      {
+        "description": "Simple binary message signing",
+        "message_hex": "48656c6c6f2c2041636b4167656e7421",
+        "message_text": "Hello, AckAgent!",
+        "signature_timestamp": 1700000100,
+        "layers": {
+          "signature_header_hex": "04001308001d",
+          "hashed_subpackets_hex": "05026553f16416210459d4dc6e32eb5fbde87346d4a306e9cced778338",
+          "unhashed_subpackets_hex": "0910a306e9cced778338",
+          "trailer_hex": "04ff00000023",
+          "hash_input_hex": "48656c6c6f2c2041636b4167656e742104001308001d05026553f16416210459d4dc6e32eb5fbde87346d4a306e9cced77833804ff00000023",
+          "digest_hex": "c8c72d7fa4c927dde0b19df6db5099f9803716e52e841d9b29de72a23fa33d59",
+          "signature_r_hex": "67dc152561d29ffac93a795e8b78f08501e94104625aba07165feed0484abf04",
+          "signature_s_hex": "35257f9a86b2d88e2320b7236cf73070456c08d1d0e27b7a89f2067004eacc98",
+          "mpi_r_hex": "00ff67dc152561d29ffac93a795e8b78f08501e94104625aba07165feed0484abf04",
+          "mpi_s_hex": "00fe35257f9a86b2d88e2320b7236cf73070456c08d1d0e27b7a89f2067004eacc98",
+          "signature_packet_body_hex": "04001308001d05026553f16416210459d4dc6e32eb5fbde87346d4a306e9cced778338000a0910a306e9cced778338c8c700ff67dc152561d29ffac93a795e8b78f08501e94104625aba07165feed0484abf0400fe35257f9a86b2d88e2320b7236cf73070456c08d1d0e27b7a89f2067004eacc98",
+          "signature_packet_hex": "887504001308001d05026553f16416210459d4dc6e32eb5fbde87346d4a306e9cced778338000a0910a306e9cced778338c8c700ff67dc152561d29ffac93a795e8b78f08501e94104625aba07165feed0484abf0400fe35257f9a86b2d88e2320b7236cf73070456c08d1d0e27b7a89f2067004eacc98",
+          "crc24_hex": "766268",
+          "armored": "-----BEGIN PGP SIGNATURE-----\n\niHUEABMIAB0FAmVT8WQWIQRZ1NxuMutfvehzRtSjBunM7XeDOAAKCRCjBunM7XeD\nOMjHAP9n3BUlYdKf+sk6eV6LePCFAelBBGJaugcWX+7QSEq/BAD+NSV/moay2I4j\nILcjbPcwcEVsCNHQ4nt6ifIGcATqzJg=\n=dmJo\n-----END PGP SIGNATURE-----\n"
+        }
+      }
+    ],
+    "component_vectors": {
+      "mpi": [
+        {
+          "description": "Single byte (0x01)",
+          "input_hex": "01",
+          "output_hex": "000101"
+        },
+        {
+          "description": "256 (0x0100)",
+          "input_hex": "0100",
+          "output_hex": "00090100"
+        },
+        {
+          "description": "Leading zeros stripped (0x00007f)",
+          "input_hex": "00007f",
+          "output_hex": "00077f"
+        },
+        {
+          "description": "32 bytes of 0xff",
+          "input_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "output_hex": "0100ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      ],
+      "crc24": [
+        {
+          "description": "Empty input",
+          "input_hex": "",
+          "crc24_hex": "b704ce"
+        },
+        {
+          "description": "Hello, World!",
+          "input_hex": "48656c6c6f2c20576f726c6421",
+          "crc24_hex": "df8bce"
+        },
+        {
+          "description": "Test data",
+          "input_hex": "74657374",
+          "crc24_hex": "f86ed0"
+        }
+      ],
+      "subpackets": [
+        {
+          "description": "Creation time (1700000000)",
+          "type": "creation_time",
+          "value_hex": "6553f100",
+          "encoded_hex": "05026553f100"
+        }
+      ]
+    }
+  },
+  "app_attest_assertion_vectors": {
+    "description": "Cross-platform test vectors for App Attest assertion verification. Apple's DCAppAttestService signs using ecdsaSignatureMessageX962SHA256 which applies SHA256 internally, so the ECDSA digest is SHA256(nonce) where nonce = SHA256(authenticatorData || clientDataHash).",
+    "vectors": [
+      {
+        "name": "key_binding_assertion_double_hash",
+        "description": "Key binding assertion with correct double SHA-256 hash depth matching Apple's SE signing behavior. The ECDSA digest is SHA256(SHA256(authenticatorData || SHA256(signingPublicKey || challenge))).",
+        "app_id": "M6P3423NZS.com.test.appattest",
+        "attested_key_private_hex": "c6ef9c5d78c3e1e3f0e0d0c0b0a090807060504030201000f0e0d0c0b0a09080",
+        "attested_key_public_uncompressed_hex": "044a5820d8da58959de9d84e756dc6c6b1813f82f398bbe058f9b44a0c824e5c495eb37c20d1a08a6c3670c8fcb0adf5caa3f401e175b6b3d9db56c38373d5855e",
+        "attested_key_public_compressed_hex": "024a5820d8da58959de9d84e756dc6c6b1813f82f398bbe058f9b44a0c824e5c49",
+        "signing_public_key_compressed_hex": "03d8be90679e7145c4d92279b98fa71d408c4aba2ab975ccaf96067ead854df37c",
+        "challenge_hex": "0102030405060708091011121314151617181920212223242526272829303132",
+        "authenticator_data_hex": "df38d846a029f4b2bd3b734e2bf21658278d0b67410941d49e6353cab9a89d3f0100000001",
+        "rp_id_hash_hex": "df38d846a029f4b2bd3b734e2bf21658278d0b67410941d49e6353cab9a89d3f",
+        "client_data_hex": "03d8be90679e7145c4d92279b98fa71d408c4aba2ab975ccaf96067ead854df37c0102030405060708091011121314151617181920212223242526272829303132",
+        "client_data_hash_hex": "b4c6aa4503afaf24e6fc15d2a90429ad57a4a93ed076093f6c412f96779a0594",
+        "nonce_hex": "3f4b416fba94c772e4460c273a744c7a41aa7ecb3a3803fb1630e51d4177bb08",
+        "digest_hex": "8a8e6beb15d95c4f725993f2871b6efca09793d4d95e3b59cae8528857481e42",
+        "signature_hex": "3045022100b6aea10ed31bad8f0cd54cb2d1c855f0b4d48b8e60ad32c232ebb8273fdf632002200cd3225dc1788d3fc58bb7fde8c7ebc3de14da2ebf5bb615ea9e021ff31214d6",
+        "assertion_cbor_hex": "a2697369676e617475726558473045022100b6aea10ed31bad8f0cd54cb2d1c855f0b4d48b8e60ad32c232ebb8273fdf632002200cd3225dc1788d3fc58bb7fde8c7ebc3de14da2ebf5bb615ea9e021ff31214d67161757468656e74696361746f72446174615825df38d846a029f4b2bd3b734e2bf21658278d0b67410941d49e6353cab9a89d3f0100000001"
+      }
+    ]
+  },
+  "ssh_vectors": {
+    "description": "SSH SK-ECDSA P-256 test vectors for OpenSSH security key provider",
+    "key_material": {
+      "description": "P-256 ECDSA key pair (same as GPG for consistency)",
+      "private_key_d_hex": "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721",
+      "public_key_x_hex": "60fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6",
+      "public_key_y_hex": "7903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299"
+    },
+    "public_key_format": {
+      "key_type": "sk-ecdsa-sha2-nistp256@openssh.com",
+      "curve_name": "nistp256",
+      "application": "ssh:",
+      "blob_hex": "00000022736b2d65636473612d736861322d6e69737470323536406f70656e7373682e636f6d000000086e69737470323536000000410460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299000000047373683a",
+      "fingerprint_sha256": "SHA256:JYPGDdpLELGIfFkQ9ZUdfCY29/fRNIIcisCjJ1vrpWc",
+      "authorized_keys_line": "sk-ecdsa-sha2-nistp256@openssh.com AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAABBBGD+1LolWp0xyWHrdMY1bWjASbiSO2H6bOZpYi5g8p+2eQP+EAi4vJmkGunpVii8ZPLxsgwtfp9Rd6PClNRGIpkAAAAEc3NoOg== test-key"
+    },
+    "key_handle": {
+      "magic_hex": "52505041",
+      "json_payload": {
+        "a": "ssh:",
+        "d": "test-device-id",
+        "k": "test-ios-key-id",
+        "t": 1700000000,
+        "v": 1
+      },
+      "complete_handle_hex": "525050414c0000007b2261223a227373683a222c2264223a22746573742d6465766963652d6964222c226b223a22746573742d696f732d6b65792d6964222c2274223a313730303030303030302c2276223a317d"
+    },
+    "signature_cases": [
+      {
+        "description": "SSH authentication (signing SHA256 hash)",
+        "data_to_sign_hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "signature_r_hex": "ee537d9b3048103bd635f560e236cb98a147a94cd832f27d14c8d61ee8b4fa92",
+        "signature_s_hex": "653d93ff29267e2b2804cc6b0778dac245ed0ee312f5d317e03c8d6e78db6ad6",
+        "raw_signature_hex": "ee537d9b3048103bd635f560e236cb98a147a94cd832f27d14c8d61ee8b4fa92653d93ff29267e2b2804cc6b0778dac245ed0ee312f5d317e03c8d6e78db6ad6"
+      }
+    ]
+  }
+}

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// SAS dictionaries are defined in sas_dict_gen.go (generated from data/sas_dictionary.json)
+// SAS dictionaries are defined in sas_dict_gen.go (generated from testdata/sas_dictionary.json)
 
 // SASDeviceKey represents a device's key for SAS computation
 type SASDeviceKey struct {

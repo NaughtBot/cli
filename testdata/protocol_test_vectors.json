@@ -1,0 +1,102 @@
+{
+  "description": "Protocol-level test vectors for SSH SK signing and response formats",
+  "ssh_sk": {
+    "description": "SSH Security Key (sk-ecdsa-sha2-nistp256@openssh.com) protocol test vectors",
+    "message_construction": [
+      {
+        "description": "Standard SSH authentication with empty challenge",
+        "application": "ssh:",
+        "application_hash_hex": "e30610e8a162115960fe1ec223e6529c9f4b6e80200dcb5e5c321c8af1e2b1bf",
+        "data_hex": "",
+        "data_hash_hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "flags": 1,
+        "counter": 1,
+        "expected_message_hex": "e30610e8a162115960fe1ec223e6529c9f4b6e80200dcb5e5c321c8af1e2b1bf0100000001e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "expected_message_length": 69
+      },
+      {
+        "description": "SSH authentication with Hello World challenge",
+        "application": "ssh:",
+        "application_hash_hex": "e30610e8a162115960fe1ec223e6529c9f4b6e80200dcb5e5c321c8af1e2b1bf",
+        "data_hex": "48656c6c6f2c20576f726c6421",
+        "data_hash_hex": "dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f",
+        "flags": 5,
+        "counter": 42,
+        "expected_message_hex": "e30610e8a162115960fe1ec223e6529c9f4b6e80200dcb5e5c321c8af1e2b1bf050000002adffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f",
+        "expected_message_length": 69
+      },
+      {
+        "description": "SSH with GitHub application string",
+        "application": "ssh://github.com",
+        "application_hash_hex": "2d3e657927024564d17d98dd77b60b7c36b0fdc5c484cf1026b7dc9126892f5a",
+        "data_hex": "deadbeef",
+        "data_hash_hex": "5f78c33274e43fa9de5659265c1d917e25c03722dcb0b8d27db8d5feaa813953",
+        "flags": 1,
+        "counter": 1,
+        "expected_message_hex": "2d3e657927024564d17d98dd77b60b7c36b0fdc5c484cf1026b7dc9126892f5a01000000015f78c33274e43fa9de5659265c1d917e25c03722dcb0b8d27db8d5feaa813953",
+        "expected_message_length": 69
+      }
+    ],
+    "enroll_response": {
+      "description": "EnrollResponse JSON structure expected by sk_provider",
+      "required_fields": [
+        "status",
+        "public_key_hex",
+        "device_key_id"
+      ],
+      "optional_fields": [
+        "attestation"
+      ],
+      "field_formats": {
+        "status": "String, must be 'approved' for success",
+        "public_key_hex": "Lowercase hex-encoded 65 bytes (0x04 || X || Y, P-256 uncompressed point, 130 hex chars)",
+        "device_key_id": "String identifier for the iOS key"
+      },
+      "examples": [
+        {
+          "description": "Successful enrollment",
+          "json": {
+            "status": "approved",
+            "public_key_hex": "0460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+            "device_key_id": "device-key-abc123"
+          },
+          "public_key_length": 65
+        }
+      ]
+    },
+    "sign_response": {
+      "description": "SSHSignResponse JSON structure expected by sk_provider",
+      "required_fields": [
+        "requestId",
+        "status",
+        "signature",
+        "counter"
+      ],
+      "field_formats": {
+        "requestId": "UUID string",
+        "status": "String, must be 'approved' for success",
+        "signature": "Base64-encoded 64 bytes (r || s, 32 bytes each)",
+        "counter": "uint32, replay protection counter"
+      },
+      "examples": [
+        {
+          "description": "Successful signing",
+          "json": {
+            "requestId": "550e8400-e29b-41d4-a716-446655440000",
+            "status": "approved",
+            "signature": "7lN9mzBIEDvWNfVg4jbLmKFHqUzYMvJ9FMjWHui0+pJlPZP/KSZ+KygEzGsHeNrCRe0O4xL10xfgPI1ueNtq1g==",
+            "counter": 1
+          },
+          "signature_length": 64
+        }
+      ]
+    }
+  },
+  "test_key": {
+    "description": "Deterministic P-256 test key (same as crypto_test_vectors.json for consistency)",
+    "private_key_d_hex": "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721",
+    "public_key_x_hex": "60fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6",
+    "public_key_y_hex": "7903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299",
+    "public_key_uncompressed_hex": "0460fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb67903fe1008b8bc99a41ae9e95628bc64f2f1b20c2d7e9f5177a3c294d4462299"
+  }
+}

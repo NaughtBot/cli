@@ -34,10 +34,10 @@ go build -buildmode=c-shared ./pkcs11-provider # libnb-pkcs11
 go test ./...
 ```
 
-Some test packages depend on the JSON test-vector fixtures that
-WS3.4 will copy into `cli/testdata/`. Until then, the relevant
-`*_vectors_test.go` files fail with file-not-found at
-`/Users/<...>/cli/../data/`.
+JSON test-vector fixtures live under `testdata/` at the repo
+root (copied in WS3.4). The shared resolver in
+`internal/shared/testdata` anchors there for every `*_vectors_test.go`
+that needs them.
 
 ## Layout
 
